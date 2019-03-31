@@ -1,7 +1,7 @@
-package com.bsgenerator
+package com.bsgenerator.crawler
 
-import akka.actor.{ActorSystem, Props}
-import akka.testkit.{TestActorRef, TestKit, TestProbe}
+import akka.actor.{ActorSystem}
+import akka.testkit.{TestKit, TestProbe}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 class ThrottleBalancerTest(_system: ActorSystem)

@@ -1,6 +1,6 @@
-package com.bsgenerator
+package com.bsgenerator.crawler
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.{HttpEntity, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 
 import scala.concurrent.Future
 
