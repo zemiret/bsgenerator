@@ -2,11 +2,11 @@ package com.bsgenerator.crawler
 
 import akka.actor.{Actor, ActorLogging, Props}
 
-object LinkExtractor {
-  def props: Props = Props(new LinkExtractor)
+object ArticleExtractor {
+  def props: Props = Props(new ArticleExtractor)
 }
 
-class LinkExtractor extends Actor with ActorLogging {
+class ArticleExtractor extends Actor with ActorLogging {
   override def preStart(): Unit = log.info("LinkExtractor started")
   override def postStop(): Unit = log.info("LinkExtractor stopped")
 

@@ -4,7 +4,7 @@ import akka.actor.{ActorSystem}
 import akka.testkit.{TestKit, TestProbe}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
-class ThrottleBalancerTest(_system: ActorSystem)
+class CrawlingBalancerTest(_system: ActorSystem)
   extends TestKit(_system)
     with Matchers
     with WordSpecLike
@@ -18,24 +18,24 @@ class ThrottleBalancerTest(_system: ActorSystem)
 
   "throttle balancer" should {
     "call handler on new requests" in {
-      // TODO: This test (requires somehow accessing actorPool)
+      // TODO: This test (requires somehow accessing actorPool - probably freaking factory)
     }
 
     "re-send correct request to awaiting actor" in {
       val respondProbe = TestProbe()
-      val throttleBalancer = system.actorOf(ThrottleBalancer.props)
+      val throttleBalancer = system.actorOf(CrawlingBalancer.props)
 
-      throttleBalancer ! ThrottleBalancer.HandleUrl("id1", "url1", respondProbe.ref)
-      throttleBalancer ! CrawlRequestHandler.Response("id1", "content")
-      respondProbe.expectMsg(ThrottleBalancer.Response("id1", "content"))
+      throttleBalancer ! CrawlingBalancer.HandleUrl("id1", "url1", respondProbe.ref)
+      throttleBalancer ! CrawlingRequestHandler.Response("id1", "content")
+      respondProbe.expectMsg(CrawlingBalancer.Response("id1", "content"))
     }
 
     "not send a response on incorrect requestId" in {
       val respondProbe = TestProbe()
-      val throttleBalancer = system.actorOf(ThrottleBalancer.props)
+      val throttleBalancer = system.actorOf(CrawlingBalancer.props)
 
-      throttleBalancer ! ThrottleBalancer.HandleUrl("id1", "url1", respondProbe.ref)
-      throttleBalancer ! CrawlRequestHandler.Response("INCORRECTID", "content")
+      throttleBalancer ! CrawlingBalancer.HandleUrl("id1", "url1", respondProbe.ref)
+      throttleBalancer ! CrawlingRequestHandler.Response("INCORRECTID", "content")
       respondProbe.expectNoMessage()
     }
   }

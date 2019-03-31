@@ -10,9 +10,9 @@ import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.util.{Failure, Success}
 
 
-object CrawlRequestHandler {
+object CrawlingRequestHandler {
   def props(httpClient: HttpService): Props =
-    Props(new CrawlRequestHandler(httpClient))
+    Props(new CrawlingRequestHandler(httpClient))
 
   final case class HandleUrl(requestId: String, url: String)
 
@@ -20,10 +20,10 @@ object CrawlRequestHandler {
 
 }
 
-class CrawlRequestHandler(httpClient: HttpService)
+class CrawlingRequestHandler(httpClient: HttpService)
   extends Actor with ActorLogging {
 
-  import CrawlRequestHandler._
+  import CrawlingRequestHandler._
 
   implicit val actorSystem: ActorSystem = context.system
   implicit val executionContext: ExecutionContextExecutor = context.system.dispatcher
