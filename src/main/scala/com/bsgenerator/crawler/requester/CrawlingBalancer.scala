@@ -1,27 +1,36 @@
 package com.bsgenerator.crawler.requester
 
+import akka.NotUsed
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
 
 import scala.collection.immutable
+import scala.concurrent.duration._
 
 object CrawlingBalancer {
   def props: Props = Props(new CrawlingBalancer)
 
   final case class HandleUrl(requestId: String, url: String, respondTo: ActorRef)
 
+  final case class DelayedHandleUrl(requestId: String, url: String, respondTo: ActorRef)
+
   final case class Response(requestId: String, content: String)
 
 }
 
 class CrawlingBalancer extends Actor with ActorLogging {
-
-  override def preStart(): Unit = log.info("ThrottleBalancer started")
-
-  override def postStop(): Unit = log.info("ThrottleBalancer stopped")
-
   implicit val system: ActorSystem = context.system
+  implicit val materializer: Materializer = ActorMaterializer.create(system)
+
   protected val actorPool: immutable.IndexedSeq[ActorRef] =
     (1 to 10) map { _ => system.actorOf(CrawlingRequestHandler.props(new DefaultHttpService)) }
+
+  private val throttler: ActorRef = Source
+    .actorRef(10000, OverflowStrategy.dropNew)
+    .throttle(20, 1.minute)
+    .to(Sink.actorRef(self, NotUsed))
+    .run()
 
 
   override def receive: Receive = waitForMessage(Map.empty)
@@ -29,8 +38,11 @@ class CrawlingBalancer extends Actor with ActorLogging {
 
   def waitForMessage(pendingRequestsToActor: Map[String, ActorRef]): Receive = {
     case CrawlingBalancer.HandleUrl(requestId, url, respondTo) =>
-      // TODO: Balance it with throttling (use streams maybe?)
+      throttler ! CrawlingBalancer.DelayedHandleUrl(requestId, url, respondTo)
+
+    case CrawlingBalancer.DelayedHandleUrl(requestId, url, respondTo) =>
       receivedHandleUrlRequest(pendingRequestsToActor, requestId, url, respondTo)
+
     case CrawlingRequestHandler.Response(requestId, content) =>
       receivedResponse(pendingRequestsToActor, requestId, content)
   }
