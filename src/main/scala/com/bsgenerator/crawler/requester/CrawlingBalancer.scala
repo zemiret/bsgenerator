@@ -13,7 +13,7 @@ object CrawlingBalancer {
 
   final case class HandleUrl(requestId: String, url: String, respondTo: ActorRef)
 
-  final case class DelayedHandleUrl(requestId: String, url: String, respondTo: ActorRef)
+  final case class DelayUrlHandling(requestId: String, url: String, respondTo: ActorRef)
 
   final case class Response(requestId: String, content: String)
 
@@ -23,10 +23,10 @@ class CrawlingBalancer extends Actor with ActorLogging {
   implicit val system: ActorSystem = context.system
   implicit val materializer: Materializer = ActorMaterializer.create(system)
 
-  protected val actorPool: immutable.IndexedSeq[ActorRef] =
+  protected val handlerPool: immutable.IndexedSeq[ActorRef] =
     (1 to 10) map { _ => system.actorOf(CrawlingRequestHandler.props(new DefaultHttpService)) }
 
-  private val throttler: ActorRef = Source
+  protected val throttler: ActorRef = Source
     .actorRef(10000, OverflowStrategy.dropNew)
     .throttle(20, 1.minute)
     .to(Sink.actorRef(self, NotUsed))
@@ -38,9 +38,9 @@ class CrawlingBalancer extends Actor with ActorLogging {
 
   def waitForMessage(pendingRequestsToActor: Map[String, ActorRef]): Receive = {
     case CrawlingBalancer.HandleUrl(requestId, url, respondTo) =>
-      throttler ! CrawlingBalancer.DelayedHandleUrl(requestId, url, respondTo)
+      throttler ! CrawlingBalancer.DelayUrlHandling(requestId, url, respondTo)
 
-    case CrawlingBalancer.DelayedHandleUrl(requestId, url, respondTo) =>
+    case CrawlingBalancer.DelayUrlHandling(requestId, url, respondTo) =>
       receivedHandleUrlRequest(pendingRequestsToActor, requestId, url, respondTo)
 
     case CrawlingRequestHandler.Response(requestId, content) =>
@@ -54,7 +54,7 @@ class CrawlingBalancer extends Actor with ActorLogging {
                                 respondTo: ActorRef): Unit = {
     // TODO: For now, for each request an actor is chosen at random (random scheduler xD)!! This should be done with load balancer and actor pool
 
-    val requestHandler = actorPool(util.Random.nextInt(actorPool.size))
+    val requestHandler = handlerPool(util.Random.nextInt(handlerPool.size))
     requestHandler ! CrawlingRequestHandler.HandleUrl(requestId, url)
     val newPendingRequestsToActor = pendingRequestsToActor + (requestId -> respondTo)
 
