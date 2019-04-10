@@ -2,7 +2,7 @@ package com.bsgenerator.crawler.requester
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
-import com.bsgenerator.crawler.requester.CrawlingBalancer.HandleUrl
+import com.bsgenerator.crawler.requester.CrawlingBalancer.{DelayedHandleUrl, HandleUrl}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.collection.immutable
@@ -29,7 +29,7 @@ class CrawlingBalancerTest(_system: ActorSystem)
           (1 to 10) map { _ => probe.ref }
       }))
 
-      crawlingBalancer ! HandleUrl("id", "someUrl", respondTo.ref)
+      crawlingBalancer ! DelayedHandleUrl("id", "someUrl", respondTo.ref)
       probe.expectMsg(CrawlingRequestHandler.HandleUrl("id", "someUrl"))
     }
 
@@ -37,7 +37,7 @@ class CrawlingBalancerTest(_system: ActorSystem)
       val respondProbe = TestProbe()
       val throttleBalancer = system.actorOf(CrawlingBalancer.props)
 
-      throttleBalancer ! CrawlingBalancer.HandleUrl("id1", "url1", respondProbe.ref)
+      throttleBalancer ! CrawlingBalancer.DelayedHandleUrl("id1", "url1", respondProbe.ref)
       throttleBalancer ! CrawlingRequestHandler.Response("id1", "content")
       respondProbe.expectMsg(CrawlingBalancer.Response("id1", "content"))
     }
@@ -46,7 +46,7 @@ class CrawlingBalancerTest(_system: ActorSystem)
       val respondProbe = TestProbe()
       val throttleBalancer = system.actorOf(CrawlingBalancer.props)
 
-      throttleBalancer ! CrawlingBalancer.HandleUrl("id1", "url1", respondProbe.ref)
+      throttleBalancer ! CrawlingBalancer.DelayedHandleUrl("id1", "url1", respondProbe.ref)
       throttleBalancer ! CrawlingRequestHandler.Response("INCORRECTID", "content")
       respondProbe.expectNoMessage()
     }
