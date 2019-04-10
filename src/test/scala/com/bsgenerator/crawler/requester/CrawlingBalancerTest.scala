@@ -2,10 +2,8 @@ package com.bsgenerator.crawler.requester
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
-import com.bsgenerator.crawler.requester.CrawlingBalancer.{DelayUrlHandling, HandleUrl}
+import com.bsgenerator.crawler.requester.CrawlingBalancer.{DelayUrlHandling}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
-
-import scala.collection.immutable
 
 class CrawlingBalancerTest(_system: ActorSystem)
   extends TestKit(_system)
@@ -31,17 +29,16 @@ class CrawlingBalancerTest(_system: ActorSystem)
       throttlerProbe.expectMsg(CrawlingBalancer.DelayUrlHandling("id", "someUrl", respondTo.ref))
     }
 
-    "call handler on new requests" in {
+    "call router handler on new requests" in {
       // This is a very crude solution to inject a child. Simple but has some problems
-      val childHandlerProbe = TestProbe()
+      val routerHandler = TestProbe()
       val respondTo = TestProbe()
       val crawlingBalancer = TestActorRef(Props(new CrawlingBalancer {
-        override protected val handlerPool: immutable.IndexedSeq[ActorRef] =
-          (1 to 10) map { _ => childHandlerProbe.ref }
+        override protected val router: ActorRef = routerHandler.ref
       }))
 
       crawlingBalancer ! DelayUrlHandling("id", "someUrl", respondTo.ref)
-      childHandlerProbe.expectMsg(CrawlingRequestHandler.HandleUrl("id", "someUrl"))
+      routerHandler.expectMsg(CrawlingBalancingRouter.HandleUrl("id", "someUrl", crawlingBalancer))
     }
 
     "re-send correct request to awaiting actor" in {

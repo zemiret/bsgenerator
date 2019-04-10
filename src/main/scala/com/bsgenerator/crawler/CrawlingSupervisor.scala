@@ -14,11 +14,7 @@ object CrawlingSupervisor {
 class CrawlingSupervisor()
   extends Actor with ActorLogging {
 
-  protected val crawlingBalancer: ActorRef = context.system.actorOf(CrawlingBalancer.props)
-
-  override def preStart(): Unit = log.info("CrawlingSupervisor started")
-
-  override def postStop(): Unit = log.info("CrawlingSupervisor stopped")
+  protected val crawlingBalancer: ActorRef = context.actorOf(CrawlingBalancer.props)
 
   override def receive: Receive = waitForMessage(Set.empty)
 

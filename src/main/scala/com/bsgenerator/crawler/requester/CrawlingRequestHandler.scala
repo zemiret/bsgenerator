@@ -30,10 +30,6 @@ class CrawlingRequestHandler(httpClient: HttpService)
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
 
-  override def preStart(): Unit = log.info("CrawlRequestHandler started")
-
-  override def postStop(): Unit = log.info("CrawlRequestHandler stopped")
-
   override def receive: Receive = {
     case HandleUrl(requestId, url) =>
       val _sender = sender()

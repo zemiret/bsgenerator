@@ -5,7 +5,6 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
 
-import scala.collection.immutable
 import scala.concurrent.duration._
 
 object CrawlingBalancer {
@@ -23,15 +22,13 @@ class CrawlingBalancer extends Actor with ActorLogging {
   implicit val system: ActorSystem = context.system
   implicit val materializer: Materializer = ActorMaterializer.create(system)
 
-  protected val handlerPool: immutable.IndexedSeq[ActorRef] =
-    (1 to 10) map { _ => system.actorOf(CrawlingRequestHandler.props(new DefaultHttpService)) }
-
   protected val throttler: ActorRef = Source
     .actorRef(10000, OverflowStrategy.dropNew)
     .throttle(20, 1.minute)
     .to(Sink.actorRef(self, NotUsed))
     .run()
 
+  protected val router: ActorRef = context.actorOf(CrawlingBalancingRouter.props())
 
   override def receive: Receive = waitForMessage(Map.empty)
 
@@ -52,10 +49,8 @@ class CrawlingBalancer extends Actor with ActorLogging {
                                 requestId: String,
                                 url: String,
                                 respondTo: ActorRef): Unit = {
-    // TODO: For now, for each request an actor is chosen at random (random scheduler xD)!! This should be done with load balancer and actor pool
 
-    val requestHandler = handlerPool(util.Random.nextInt(handlerPool.size))
-    requestHandler ! CrawlingRequestHandler.HandleUrl(requestId, url)
+    router ! CrawlingBalancingRouter.HandleUrl(requestId, url, self)
     val newPendingRequestsToActor = pendingRequestsToActor + (requestId -> respondTo)
 
     context become waitForMessage(newPendingRequestsToActor)
