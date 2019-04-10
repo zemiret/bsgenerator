@@ -1,7 +1,9 @@
 package com.bsgenerator.crawler
 
-import akka.actor.ActorSystem
-import akka.testkit.TestKit
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.testkit.{TestActorRef, TestKit, TestProbe}
+import com.bsgenerator.crawler.CrawlingSupervisor.HandleUrl
+import com.bsgenerator.crawler.requester.CrawlingBalancer
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 class CrawlingSupervisorTest(_system: ActorSystem)
@@ -18,12 +20,14 @@ class CrawlingSupervisorTest(_system: ActorSystem)
 
   "crawling supervisor" should {
     "delegate url handling to balancer" in {
-//      TODO: How can I test/mock child? I WANT them to be CHILD of this actor, not passed via props
-//      val probe = TestProbe()
-//      val crawlingSupervisor = system.actorOf(CrawlingSupervisor.props(probe.ref))
-//
-//      crawlingSupervisor ! HandleUrl("someUrl")
-//      probe.expectMsg(CrawlingBalancer.HandleUrl(_, "someUrl", crawlingSupervisor))
+      // This is a very crude solution to inject a child. There are better ways!
+      val probe = TestProbe()
+      val crawlingSupervisor = TestActorRef(Props(new CrawlingSupervisor {
+        override protected val crawlingBalancer: ActorRef = probe.ref
+      }))
+
+      crawlingSupervisor ! HandleUrl("someUrl")
+      probe.expectMsgClass(classOf[CrawlingBalancer.HandleUrl])
     }
   }
 }

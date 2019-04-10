@@ -1,4 +1,4 @@
-package com.bsgenerator.crawler
+package com.bsgenerator.crawler.requester
 
 import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}

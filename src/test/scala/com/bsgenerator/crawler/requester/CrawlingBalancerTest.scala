@@ -1,8 +1,11 @@
-package com.bsgenerator.crawler
+package com.bsgenerator.crawler.requester
 
-import akka.actor.{ActorSystem}
-import akka.testkit.{TestKit, TestProbe}
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.testkit.{TestActorRef, TestKit, TestProbe}
+import com.bsgenerator.crawler.requester.CrawlingBalancer.HandleUrl
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+
+import scala.collection.immutable
 
 class CrawlingBalancerTest(_system: ActorSystem)
   extends TestKit(_system)
@@ -18,7 +21,16 @@ class CrawlingBalancerTest(_system: ActorSystem)
 
   "throttle balancer" should {
     "call handler on new requests" in {
-      // TODO: This test (requires somehow accessing actorPool - probably freaking factory)
+      // This is a very crude solution to inject a child. There are better ways!
+      val probe = TestProbe()
+      val respondTo = TestProbe()
+      val crawlingBalancer = TestActorRef(Props(new CrawlingBalancer {
+        override protected val actorPool: immutable.IndexedSeq[ActorRef] =
+          (1 to 10) map { _ => probe.ref }
+      }))
+
+      crawlingBalancer ! HandleUrl("id", "someUrl", respondTo.ref)
+      probe.expectMsg(CrawlingRequestHandler.HandleUrl("id", "someUrl"))
     }
 
     "re-send correct request to awaiting actor" in {

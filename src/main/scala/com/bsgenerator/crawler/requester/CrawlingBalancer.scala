@@ -1,6 +1,8 @@
-package com.bsgenerator.crawler
+package com.bsgenerator.crawler.requester
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+
+import scala.collection.immutable
 
 object CrawlingBalancer {
   def props: Props = Props(new CrawlingBalancer)
@@ -18,7 +20,8 @@ class CrawlingBalancer extends Actor with ActorLogging {
   override def postStop(): Unit = log.info("ThrottleBalancer stopped")
 
   implicit val system: ActorSystem = context.system
-  private val actorPool = (1 to 10) map { _ => system.actorOf(CrawlingRequestHandler.props(new DefaultHttpService)) }
+  protected val actorPool: immutable.IndexedSeq[ActorRef] =
+    (1 to 10) map { _ => system.actorOf(CrawlingRequestHandler.props(new DefaultHttpService)) }
 
 
   override def receive: Receive = waitForMessage(Map.empty)

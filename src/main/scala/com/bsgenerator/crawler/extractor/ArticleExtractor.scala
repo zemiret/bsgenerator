@@ -1,4 +1,4 @@
-package com.bsgenerator.crawler
+package com.bsgenerator.crawler.extractor
 
 import akka.actor.{Actor, ActorLogging, Props}
 

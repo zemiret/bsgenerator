@@ -3,17 +3,18 @@ package com.bsgenerator.crawler
 import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import com.bsgenerator.crawler.requester.CrawlingBalancer
 
 object CrawlingSupervisor {
   def props(): Props = Props(new CrawlingSupervisor())
 
-    final case class HandleUrl(url: String)
+  final case class HandleUrl(url: String)
 }
 
 class CrawlingSupervisor()
   extends Actor with ActorLogging {
 
-  private val crawlingBalancer = context.system.actorOf(CrawlingBalancer.props)
+  protected val crawlingBalancer: ActorRef = context.system.actorOf(CrawlingBalancer.props)
 
   override def preStart(): Unit = log.info("CrawlingSupervisor started")
 

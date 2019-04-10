@@ -1,4 +1,5 @@
-package com.bsgenerator.crawler
+package com.bsgenerator.crawler.requester
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 
