@@ -1,9 +1,8 @@
 package com.bsgenerator.crawler
 
-import java.util.UUID
-
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.bsgenerator.crawler.requester.CrawlingBalancer
+import com.bsgenerator.utils.Helpers
 
 object CrawlingSupervisor {
   def props(): Props = Props(new CrawlingSupervisor())
@@ -11,7 +10,7 @@ object CrawlingSupervisor {
   final case class HandleUrl(url: String)
 }
 
-class CrawlingSupervisor()
+class CrawlingSupervisor
   extends Actor with ActorLogging {
 
   protected val crawlingBalancer: ActorRef = context.actorOf(CrawlingBalancer.props)
@@ -49,7 +48,7 @@ class CrawlingSupervisor()
                        pendingCrawlingRequests: Set[String],
                        url: String
                        ): Unit = {
-    val requestId = UUID.randomUUID.toString
+    val requestId = Helpers.randomId
     val newPendingCrawlingRequests = pendingCrawlingRequests + requestId
 
     crawlingBalancer ! CrawlingBalancer.HandleUrl(requestId, url, self)
