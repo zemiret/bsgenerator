@@ -20,7 +20,7 @@ object HeuristicExtractor {
   )
 
   val cleaningLadies: Seq[Element => Unit] = Seq(
-    e => contentWrappers.map(e.getElementsByTag).filter(_.text().isBlank).foreach(_.remove)
+    e => contentWrappers.map(e.getElementsByTag).filter(_.text().isEmpty).foreach(_.remove)
   )
 
 }
@@ -80,7 +80,7 @@ class HeuristicExtractor extends ArticleExtractor {
 
     candidateScores.toSeq.sortBy(_._2).lastOption match {
       case None => Option.empty
-      case Some(e) => Option(e._1.wholeText().strip())
+      case Some(e) => Option(e._1.wholeText.trim)
     }
   }
 }
