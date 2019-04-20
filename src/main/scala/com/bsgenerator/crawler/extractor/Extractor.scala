@@ -19,11 +19,6 @@ class Extractor(val articleExtractor: ArticleExtractor, val linkExtractor: LinkE
       val extractedContent = articleExtractor.extract(content)
       val extractedLinks = linkExtractor.extract(content, baseUrl)
 
-      extractedContent match {
-        case Some(resultContent) =>
-          sender() ! ExtractorCoordinator.ExtractedContent(requestId, resultContent)
-      }
-
-      sender() ! ExtractorCoordinator.ExtractedLinks(requestId, extractedLinks)
+      sender() ! ExtractorCoordinator.ExtractedContentAndLinks(requestId, extractedContent, extractedLinks)
   }
 }
