@@ -9,7 +9,6 @@ object Extractor {
     Props(new Extractor(articleExtractor, linkExtractor))
 
   final case class Extract(RequestId: String, content: String, baseUrl: String)
-
 }
 
 class Extractor(val articleExtractor: ArticleExtractor, val linkExtractor: LinkExtractor)

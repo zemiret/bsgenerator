@@ -2,7 +2,7 @@ package com.bsgenerator.crawler.requester
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
-import com.bsgenerator.crawler.requester.CrawlingBalancer.{DelayUrlHandling}
+import com.bsgenerator.crawler.requester.CrawlingBalancer.DelayUrlHandling
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 class CrawlingBalancerTest(_system: ActorSystem)
@@ -34,7 +34,7 @@ class CrawlingBalancerTest(_system: ActorSystem)
       val routerHandler = TestProbe()
       val respondTo = TestProbe()
       val crawlingBalancer = TestActorRef(Props(new CrawlingBalancer {
-        override protected val router: ActorRef = routerHandler.ref
+        override protected val requestHandlersRouter: ActorRef = routerHandler.ref
       }))
 
       crawlingBalancer ! DelayUrlHandling("id", "someUrl", respondTo.ref)

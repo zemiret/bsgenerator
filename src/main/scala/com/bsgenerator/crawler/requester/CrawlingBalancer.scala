@@ -28,7 +28,7 @@ class CrawlingBalancer extends Actor with ActorLogging {
     .to(Sink.actorRef(self, NotUsed))
     .run()
 
-  protected val router: ActorRef = context.actorOf(CrawlingBalancingRouter.props())
+  protected val requestHandlersRouter: ActorRef = context.actorOf(CrawlingBalancingRouter.props())
 
   override def receive: Receive = waitForMessage(Map.empty)
 
@@ -50,7 +50,7 @@ class CrawlingBalancer extends Actor with ActorLogging {
                                 url: String,
                                 respondTo: ActorRef): Unit = {
 
-    router ! CrawlingBalancingRouter.HandleUrl(requestId, url, self)
+    requestHandlersRouter ! CrawlingBalancingRouter.HandleUrl(requestId, url, self)
     val newPendingRequestsToActor = pendingRequestsToActor + (requestId -> respondTo)
 
     context become waitForMessage(newPendingRequestsToActor)

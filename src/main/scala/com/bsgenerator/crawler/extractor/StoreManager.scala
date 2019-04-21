@@ -9,6 +9,8 @@ object StoreManager {
 
   final case class StoreLinks(requestId: String, links: Set[String])
 
+  final case class LinksStored(requestId: String)
+
   final case class FilterPresentLinks(requestId: String, links: Set[String])
 }
 
