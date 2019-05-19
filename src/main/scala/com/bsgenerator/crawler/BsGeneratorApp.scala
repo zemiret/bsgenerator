@@ -9,7 +9,7 @@ object BsGeneratorApp extends App {
 
   try {
     val crawlingSupervisor = system.actorOf(
-     CrawlingSupervisor.props,
+      CrawlingSupervisor.props("http://www.batey.info"),
       "crawling-supervisor")
 
     for (_ <- 1 to 100) {

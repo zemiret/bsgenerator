@@ -5,12 +5,13 @@ import com.bsgenerator.crawler.requester.CrawlingBalancer
 import com.bsgenerator.utils.Id
 
 object CrawlingSupervisor {
-  def props(): Props = Props(new CrawlingSupervisor())
+  def props(baseUrl: String): Props =
+    Props(new CrawlingSupervisor(baseUrl))
 
   final case class HandleUrlRequest(url: String)
 }
 
-class CrawlingSupervisor
+class CrawlingSupervisor(private val baseUrl: String)
   extends Actor with ActorLogging {
 
   protected val crawlingBalancer: ActorRef = context.actorOf(CrawlingBalancer.props)

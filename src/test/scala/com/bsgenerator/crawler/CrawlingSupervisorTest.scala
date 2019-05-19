@@ -22,7 +22,7 @@ class CrawlingSupervisorTest(_system: ActorSystem)
     "delegate url handling to balancer" in {
       // This is a very crude solution to inject a child. There are better ways!
       val probe = TestProbe()
-      val crawlingSupervisor = TestActorRef(Props(new CrawlingSupervisor {
+      val crawlingSupervisor = TestActorRef(Props(new CrawlingSupervisor("baseUrl") {
         override protected val crawlingBalancer: ActorRef = probe.ref
       }))
 
