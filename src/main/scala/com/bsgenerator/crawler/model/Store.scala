@@ -1,4 +1,4 @@
-package com.bsgenerator.crawler.extractor
+package com.bsgenerator.crawler.model
 
 import akka.actor.{Actor, ActorLogging, Props}
 import scalikejdbc._
@@ -14,6 +14,8 @@ object Store {
 
   final case class FilterLinksRequest(requestId: String, links: Set[String])
 
+  implicit val session: AutoSession.type = AutoSession
+
   private def init(): Unit = {
     // TODO: Probably extract user passes to some config
     val url = "jdbc:postgresql://localhost/bsgenerator"
@@ -23,8 +25,22 @@ object Store {
 
     Class.forName(driver)
     ConnectionPool.singleton(url, username, password)
+  }
 
-    implicit val session: AutoSession.type = AutoSession
+  def cleanup(): Unit = {
+    session.close()
+    ConnectionPool.closeAll()
+  }
+
+  def createSite(baseUrl: String): Option[Site] = {
+    sql"insert into sites (baseUrl) values ($baseUrl)".update().apply()
+
+    val res = sql"select * from sites where baseUrl = $baseUrl"
+      .map(rs => Site(rs))
+      .first
+      .apply()
+
+    res
   }
 
   init()

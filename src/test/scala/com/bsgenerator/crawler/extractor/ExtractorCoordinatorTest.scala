@@ -3,6 +3,7 @@ package com.bsgenerator.crawler.extractor
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
 import com.bsgenerator.crawler.CrawlingSupervisor
+import com.bsgenerator.crawler.model.Store
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.reflect._
