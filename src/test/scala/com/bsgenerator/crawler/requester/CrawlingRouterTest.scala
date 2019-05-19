@@ -5,7 +5,7 @@ import akka.testkit.{TestActorRef, TestKit, TestProbe}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 
-class CrawlingBalancingRouterTest(_system: ActorSystem)
+class CrawlingRouterTest(_system: ActorSystem)
   extends TestKit(_system)
     with Matchers
     with WordSpecLike
@@ -22,11 +22,11 @@ class CrawlingBalancingRouterTest(_system: ActorSystem)
       val routerProbe = TestProbe()
       val senderProbe = TestProbe()
 
-      val router = TestActorRef(Props(new CrawlingBalancingRouter {
+      val router = TestActorRef(Props(new CrawlingRouter {
         override protected val router: ActorRef = routerProbe.ref
       }))
 
-      router ! CrawlingBalancingRouter.HandleUrlRequest("id", "someUrl", senderProbe.ref)
+      router ! CrawlingRouter.HandleUrlRequest("id", "someUrl", senderProbe.ref)
       routerProbe.expectMsg(CrawlingRequestHandler.HandleUrlRequest("id", "someUrl"))
     }
   }

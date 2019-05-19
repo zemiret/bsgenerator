@@ -3,7 +3,7 @@ package com.bsgenerator.crawler
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
 import com.bsgenerator.crawler.CrawlingSupervisor.HandleUrlRequest
-import com.bsgenerator.crawler.requester.CrawlingBalancer
+import com.bsgenerator.crawler.requester.CrawlingCoordinator
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 class CrawlingSupervisorTest(_system: ActorSystem)
@@ -27,7 +27,7 @@ class CrawlingSupervisorTest(_system: ActorSystem)
       }))
 
       crawlingSupervisor ! HandleUrlRequest("someUrl")
-      probe.expectMsgClass(classOf[CrawlingBalancer.HandleUrlRequest])
+      probe.expectMsgClass(classOf[CrawlingCoordinator.HandleUrlRequest])
     }
   }
 }

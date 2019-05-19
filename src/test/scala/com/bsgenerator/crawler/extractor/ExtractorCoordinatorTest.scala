@@ -25,7 +25,7 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
       // This is a very crude solution to inject a child. Simple but has some problems
       val routerHandler = TestProbe()
       val respondTo = TestProbe()
-      val extractorCoordinator = TestActorRef(Props(new ExtractorCoordinator {
+      val extractorCoordinator = TestActorRef(Props(new ExtractorCoordinator("baseUrl") {
         override protected val extractorsRouter: ActorRef = routerHandler.ref
       }))
 
@@ -36,8 +36,8 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
 
     "store extracted if some and call links filter" in {
       val storeHandler = TestProbe()
-      val extractorCoordinator = TestActorRef(Props(new ExtractorCoordinator {
-        override protected val storeManager: ActorRef = storeHandler.ref
+      val extractorCoordinator = TestActorRef(Props(new ExtractorCoordinator("baseUrl") {
+        override protected val store: ActorRef = storeHandler.ref
       }))
 
       val links = Set("url1", "url2")
@@ -53,8 +53,8 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
 
     "not store extracted if none and call links filter" in {
       val storeHandler = TestProbe()
-      val extractorCoordinator = TestActorRef(Props(new ExtractorCoordinator {
-        override protected val storeManager: ActorRef = storeHandler.ref
+      val extractorCoordinator = TestActorRef(Props(new ExtractorCoordinator("baseUrl") {
+        override protected val store: ActorRef = storeHandler.ref
       }))
 
       val links = Set("url1", "url2")
@@ -70,8 +70,8 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
 
     "store filtered links" in {
       val storeHandler = TestProbe()
-      val extractorCoordinator = TestActorRef(Props(new ExtractorCoordinator {
-        override protected val storeManager: ActorRef = storeHandler.ref
+      val extractorCoordinator = TestActorRef(Props(new ExtractorCoordinator("baseUrl") {
+        override protected val store: ActorRef = storeHandler.ref
       }))
 
       val links = Set("url1", "url2")
@@ -83,7 +83,7 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
 
     "notify parent about new links to handle" in {
       val parent = TestProbe()
-      val extractorCoordinator = TestActorRef(Props[ExtractorCoordinator], parent.ref)
+      val extractorCoordinator = TestActorRef(ExtractorCoordinator.props("baseUrl"), parent.ref)
 
       val links = Set("url1", "url2", "url3")
 

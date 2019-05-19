@@ -1,6 +1,6 @@
 package com.bsgenerator.crawler.extractor
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, ActorLogging, Props}
 import com.bsgenerator.extractor.article.ArticleExtractor
 import com.bsgenerator.extractor.link.LinkExtractor
 
@@ -12,7 +12,7 @@ object Extractor {
 }
 
 class Extractor(val articleExtractor: ArticleExtractor, val linkExtractor: LinkExtractor)
-  extends Actor {
+  extends Actor with ActorLogging {
   override def receive: Receive = {
     case Extractor.ExtractRequest(requestId, content, baseUrl) =>
       val extractedContent = articleExtractor.extract(content)

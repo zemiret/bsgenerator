@@ -2,10 +2,10 @@ package com.bsgenerator.crawler.requester
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
-import com.bsgenerator.crawler.requester.CrawlingBalancer.DelayUrlHandlingRequest
+import com.bsgenerator.crawler.requester.CrawlingCoordinator.DelayUrlHandlingRequest
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
-class CrawlingBalancerTest(_system: ActorSystem)
+class CrawlingCoordinatorTest(_system: ActorSystem)
   extends TestKit(_system)
     with Matchers
     with WordSpecLike
@@ -21,40 +21,40 @@ class CrawlingBalancerTest(_system: ActorSystem)
     "add message to the throttled queue when it comes" in {
       val throttlerProbe = TestProbe()
       val respondTo = TestProbe()
-      val crawlingBalancer = TestActorRef(Props(new CrawlingBalancer {
+      val crawlingBalancer = TestActorRef(Props(new CrawlingCoordinator {
         override protected val throttler: ActorRef = throttlerProbe.ref
       }))
 
-      crawlingBalancer ! CrawlingBalancer.HandleUrlRequest("id", "someUrl", respondTo.ref)
-      throttlerProbe.expectMsg(CrawlingBalancer.DelayUrlHandlingRequest("id", "someUrl", respondTo.ref))
+      crawlingBalancer ! CrawlingCoordinator.HandleUrlRequest("id", "someUrl", respondTo.ref)
+      throttlerProbe.expectMsg(CrawlingCoordinator.DelayUrlHandlingRequest("id", "someUrl", respondTo.ref))
     }
 
     "call router handler on new requests" in {
       // This is a very crude solution to inject a child. Simple but has some problems
       val routerHandler = TestProbe()
       val respondTo = TestProbe()
-      val crawlingBalancer = TestActorRef(Props(new CrawlingBalancer {
+      val crawlingBalancer = TestActorRef(Props(new CrawlingCoordinator {
         override protected val requestHandlersRouter: ActorRef = routerHandler.ref
       }))
 
       crawlingBalancer ! DelayUrlHandlingRequest("id", "someUrl", respondTo.ref)
-      routerHandler.expectMsg(CrawlingBalancingRouter.HandleUrlRequest("id", "someUrl", crawlingBalancer))
+      routerHandler.expectMsg(CrawlingRouter.HandleUrlRequest("id", "someUrl", crawlingBalancer))
     }
 
     "re-send correct request to awaiting actor" in {
       val respondProbe = TestProbe()
-      val throttleBalancer = system.actorOf(CrawlingBalancer.props)
+      val throttleBalancer = system.actorOf(CrawlingCoordinator.props)
 
-      throttleBalancer ! CrawlingBalancer.DelayUrlHandlingRequest("id1", "url1", respondProbe.ref)
+      throttleBalancer ! CrawlingCoordinator.DelayUrlHandlingRequest("id1", "url1", respondProbe.ref)
       throttleBalancer ! CrawlingRequestHandler.Response("id1", "content")
-      respondProbe.expectMsg(CrawlingBalancer.Response("id1", "content"))
+      respondProbe.expectMsg(CrawlingCoordinator.Response("id1", "content"))
     }
 
     "not send a response on incorrect requestId" in {
       val respondProbe = TestProbe()
-      val throttleBalancer = system.actorOf(CrawlingBalancer.props)
+      val throttleBalancer = system.actorOf(CrawlingCoordinator.props)
 
-      throttleBalancer ! CrawlingBalancer.DelayUrlHandlingRequest("id1", "url1", respondProbe.ref)
+      throttleBalancer ! CrawlingCoordinator.DelayUrlHandlingRequest("id1", "url1", respondProbe.ref)
       throttleBalancer ! CrawlingRequestHandler.Response("INCORRECTID", "content")
       respondProbe.expectNoMessage()
     }

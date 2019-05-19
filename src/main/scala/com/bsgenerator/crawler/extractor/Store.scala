@@ -3,7 +3,7 @@ package com.bsgenerator.crawler.extractor
 import akka.actor.{Actor, ActorLogging, Props}
 
 object Store {
-  def props: Props = Props(new Store)
+  def props(baseUrl: String): Props = Props(new Store(baseUrl))
 
   final case class StoreContentRequest(requestId: String, content: String)
 
@@ -15,6 +15,6 @@ object Store {
 
 }
 
-class Store extends Actor with ActorLogging {
+class Store(private val baseUrl: String) extends Actor with ActorLogging {
   override def receive: Receive = Actor.emptyBehavior
 }

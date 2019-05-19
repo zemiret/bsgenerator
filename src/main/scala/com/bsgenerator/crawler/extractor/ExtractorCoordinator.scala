@@ -1,11 +1,11 @@
 package com.bsgenerator.crawler.extractor
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.bsgenerator.crawler.CrawlingSupervisor
 import com.bsgenerator.utils.Id
 
 object ExtractorCoordinator {
-  def props: Props = Props(new ExtractorCoordinator)
+  def props(baseUrl: String): Props = Props(new ExtractorCoordinator(baseUrl))
 
   final case class ExtractRequest(content: String, baseUrl: String)
 
@@ -15,14 +15,14 @@ object ExtractorCoordinator {
 
 }
 
-class ExtractorCoordinator extends Actor {
+class ExtractorCoordinator(private val baseUrl: String) extends Actor with ActorLogging {
 
   import ExtractorCoordinator._
 
   protected val extractorsRouter: ActorRef = context.actorOf(ExtractorsRouter.props())
 
   // For now, there is only one. In case it's bottleneck, create router for it as well
-  protected val storeManager: ActorRef = context.actorOf(Store.props)
+  protected val store: ActorRef = context.actorOf(Store.props(baseUrl))
 
 
   override def receive: Receive = waitForMessage(Set.empty, Set.empty, Set.empty)
@@ -66,17 +66,21 @@ class ExtractorCoordinator extends Actor {
                             links: Set[String]) = {
     val newExtractRequests = extractRequests - requestId
 
-    val filterRequestId = Id.randomId()
-    val newFilterRequests = filterRequests + filterRequestId
-
     content match {
-      case Some(contentString) =>
-        storeManager ! Store.StoreContentRequest(requestId, contentString)
-      case _ =>
+      case Some(someContent) =>
+        store ! Store.StoreContentRequest(requestId, someContent)
+      case _ => log.info("Couldn't extract content, extractRequestId: {}", requestId)
     }
-    storeManager ! Store.FilterLinksRequest(filterRequestId, links)
 
-    context become waitForMessage(newExtractRequests, newFilterRequests, storeLinksRequests)
+    if (links.nonEmpty) {
+      val filterRequestId = Id.randomId()
+      val newFilterRequests = filterRequests + filterRequestId
+
+      store ! Store.FilterLinksRequest(filterRequestId, links)
+      context become waitForMessage(newExtractRequests, newFilterRequests, storeLinksRequests)
+    } else {
+      context become waitForMessage(newExtractRequests, filterRequests, storeLinksRequests)
+    }
   }
 
   def receivedFilteredLinks(extractRequests: Set[String],
@@ -91,7 +95,7 @@ class ExtractorCoordinator extends Actor {
     val storeRequestId = Id.randomId()
     val newStoreLinksRequests = storeLinksRequests + storeRequestId
 
-    storeManager ! Store.StoreLinksRequest(storeRequestId, links)
+    store ! Store.StoreLinksRequest(storeRequestId, links)
 
     context become waitForMessage(extractRequests, newFilterRequests, newStoreLinksRequests)
   }
