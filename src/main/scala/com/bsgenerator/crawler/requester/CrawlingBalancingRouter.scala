@@ -6,7 +6,7 @@ import akka.routing._
 object CrawlingBalancingRouter {
   def props(): Props = Props(new CrawlingBalancingRouter)
 
-  final case class HandleUrl(requestId: String, url: String, senderActor: ActorRef)
+  final case class HandleUrlRequest(requestId: String, url: String, senderActor: ActorRef)
 }
 
 class CrawlingBalancingRouter extends Actor {
@@ -17,7 +17,7 @@ class CrawlingBalancingRouter extends Actor {
     )
 
   def receive = {
-    case CrawlingBalancingRouter.HandleUrl(requestId, url, senderActor) =>
-      router.tell(CrawlingRequestHandler.HandleUrl(requestId, url), senderActor)
+    case CrawlingBalancingRouter.HandleUrlRequest(requestId, url, senderActor) =>
+      router.tell(CrawlingRequestHandler.HandleUrlRequest(requestId, url), senderActor)
   }
 }

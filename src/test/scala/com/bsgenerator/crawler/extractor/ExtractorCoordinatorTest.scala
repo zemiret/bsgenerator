@@ -29,9 +29,9 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
         override protected val extractorsRouter: ActorRef = routerHandler.ref
       }))
 
-      extractorCoordinator ! ExtractorCoordinator.Extract("content", "baseUrl")
+      extractorCoordinator ! ExtractorCoordinator.ExtractRequest("content", "baseUrl")
 
-      routerHandler.expectMsgType(classTag[ExtractorsRouter.Extract])
+      routerHandler.expectMsgType(classTag[ExtractorsRouter.ExtractRequest])
     }
 
     "store extracted if some and call links filter" in {
@@ -41,14 +41,14 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
       }))
 
       val links = Set("url1", "url2")
-      extractorCoordinator ! ExtractorCoordinator.ExtractedContentAndLinks(
+      extractorCoordinator ! ExtractorCoordinator.ExtractedResponse(
         "id",
         Option("some content"),
         links
       )
 
-      storeHandler.expectMsgType(classTag[StoreManager.StoreContent])
-      storeHandler.expectMsgType(classTag[StoreManager.FilterPresentLinks])
+      storeHandler.expectMsgType(classTag[Store.StoreContentRequest])
+      storeHandler.expectMsgType(classTag[Store.FilterLinksRequest])
     }
 
     "not store extracted if none and call links filter" in {
@@ -58,13 +58,13 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
       }))
 
       val links = Set("url1", "url2")
-      extractorCoordinator ! ExtractorCoordinator.ExtractedContentAndLinks(
+      extractorCoordinator ! ExtractorCoordinator.ExtractedResponse(
         "id",
         Option.empty,
         links
       )
 
-      storeHandler.expectMsgType(classTag[StoreManager.FilterPresentLinks])
+      storeHandler.expectMsgType(classTag[Store.FilterLinksRequest])
       storeHandler.expectNoMessage()
     }
 
@@ -76,9 +76,9 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
 
       val links = Set("url1", "url2")
 
-      extractorCoordinator ! ExtractorCoordinator.FilteredLinks("id", links)
+      extractorCoordinator ! ExtractorCoordinator.FilteredLinksResponse("id", links)
 
-      storeHandler.expectMsgType(classTag[StoreManager.StoreLinks])
+      storeHandler.expectMsgType(classTag[Store.StoreLinksRequest])
     }
 
     "notify parent about new links to handle" in {
@@ -87,11 +87,11 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
 
       val links = Set("url1", "url2", "url3")
 
-      extractorCoordinator ! ExtractorCoordinator.FilteredLinks("id", links)
+      extractorCoordinator ! ExtractorCoordinator.FilteredLinksResponse("id", links)
 
-      parent.expectMsg(CrawlingSupervisor.HandleUrl("url1"))
-      parent.expectMsg(CrawlingSupervisor.HandleUrl("url2"))
-      parent.expectMsg(CrawlingSupervisor.HandleUrl("url3"))
+      parent.expectMsg(CrawlingSupervisor.HandleUrlRequest("url1"))
+      parent.expectMsg(CrawlingSupervisor.HandleUrlRequest("url2"))
+      parent.expectMsg(CrawlingSupervisor.HandleUrlRequest("url3"))
     }
   }
 }

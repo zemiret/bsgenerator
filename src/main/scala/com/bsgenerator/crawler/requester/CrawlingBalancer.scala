@@ -10,9 +10,9 @@ import scala.concurrent.duration._
 object CrawlingBalancer {
   def props: Props = Props(new CrawlingBalancer)
 
-  final case class HandleUrl(requestId: String, url: String, respondTo: ActorRef)
+  final case class HandleUrlRequest(requestId: String, url: String, respondTo: ActorRef)
 
-  final case class DelayUrlHandling(requestId: String, url: String, respondTo: ActorRef)
+  final case class DelayUrlHandlingRequest(requestId: String, url: String, respondTo: ActorRef)
 
   final case class Response(requestId: String, content: String)
 
@@ -34,10 +34,10 @@ class CrawlingBalancer extends Actor with ActorLogging {
 
 
   def waitForMessage(pendingRequestsToActor: Map[String, ActorRef]): Receive = {
-    case CrawlingBalancer.HandleUrl(requestId, url, respondTo) =>
-      throttler ! CrawlingBalancer.DelayUrlHandling(requestId, url, respondTo)
+    case CrawlingBalancer.HandleUrlRequest(requestId, url, respondTo) =>
+      throttler ! CrawlingBalancer.DelayUrlHandlingRequest(requestId, url, respondTo)
 
-    case CrawlingBalancer.DelayUrlHandling(requestId, url, respondTo) =>
+    case CrawlingBalancer.DelayUrlHandlingRequest(requestId, url, respondTo) =>
       receivedHandleUrlRequest(pendingRequestsToActor, requestId, url, respondTo)
 
     case CrawlingRequestHandler.Response(requestId, content) =>
@@ -50,7 +50,7 @@ class CrawlingBalancer extends Actor with ActorLogging {
                                 url: String,
                                 respondTo: ActorRef): Unit = {
 
-    requestHandlersRouter ! CrawlingBalancingRouter.HandleUrl(requestId, url, self)
+    requestHandlersRouter ! CrawlingBalancingRouter.HandleUrlRequest(requestId, url, self)
     val newPendingRequestsToActor = pendingRequestsToActor + (requestId -> respondTo)
 
     context become waitForMessage(newPendingRequestsToActor)

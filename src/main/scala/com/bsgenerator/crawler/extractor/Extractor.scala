@@ -8,16 +8,16 @@ object Extractor {
   def props(articleExtractor: ArticleExtractor, linkExtractor: LinkExtractor): Props =
     Props(new Extractor(articleExtractor, linkExtractor))
 
-  final case class Extract(RequestId: String, content: String, baseUrl: String)
+  final case class ExtractRequest(RequestId: String, content: String, baseUrl: String)
 }
 
 class Extractor(val articleExtractor: ArticleExtractor, val linkExtractor: LinkExtractor)
   extends Actor {
   override def receive: Receive = {
-    case Extractor.Extract(requestId, content, baseUrl) =>
+    case Extractor.ExtractRequest(requestId, content, baseUrl) =>
       val extractedContent = articleExtractor.extract(content)
       val extractedLinks = linkExtractor.extract(content, baseUrl)
 
-      sender() ! ExtractorCoordinator.ExtractedContentAndLinks(requestId, extractedContent, extractedLinks)
+      sender() ! ExtractorCoordinator.ExtractedResponse(requestId, extractedContent, extractedLinks)
   }
 }

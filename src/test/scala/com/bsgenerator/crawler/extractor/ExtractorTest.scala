@@ -29,10 +29,10 @@ class ExtractorTest(_system: ActorSystem)
           new LinkExtractorMock(links)
         ))
 
-      extractor.tell(Extractor.Extract("id", "content", "baseUrl"), senderProbe.ref)
+      extractor.tell(Extractor.ExtractRequest("id", "content", "baseUrl"), senderProbe.ref)
 
       senderProbe.expectMsg(
-        ExtractorCoordinator.ExtractedContentAndLinks("id", Option("content"), links)
+        ExtractorCoordinator.ExtractedResponse("id", Option("content"), links)
       )
     }
   }

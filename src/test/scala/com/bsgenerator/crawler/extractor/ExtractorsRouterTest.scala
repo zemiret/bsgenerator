@@ -18,7 +18,7 @@ class ExtractorsRouterTest(_system: ActorSystem)
   }
 
   "extractors router" should {
-    "router work to children" in {
+    "route work to children" in {
       val routerProbe = TestProbe()
       val senderProbe = TestProbe()
 
@@ -26,8 +26,8 @@ class ExtractorsRouterTest(_system: ActorSystem)
         override protected val router: ActorRef = routerProbe.ref
       }))
 
-      router ! ExtractorsRouter.Extract("id", "content", "base", senderProbe.ref)
-      routerProbe.expectMsg(Extractor.Extract("id", "content", "base"))
+      router ! ExtractorsRouter.ExtractRequest("id", "content", "base", senderProbe.ref)
+      routerProbe.expectMsg(Extractor.ExtractRequest("id", "content", "base"))
     }
   }
 }

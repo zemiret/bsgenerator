@@ -13,7 +13,7 @@ object BsGeneratorApp extends App {
       "crawling-supervisor")
 
     for (_ <- 1 to 100) {
-      crawlingSupervisor ! CrawlingSupervisor.HandleUrl("http://www.batey.info/akka-testing-messages-sent-to-child.html")
+      crawlingSupervisor ! CrawlingSupervisor.HandleUrlRequest("http://www.batey.info/akka-testing-messages-sent-to-child.html")
     }
 
     StdIn.readLine

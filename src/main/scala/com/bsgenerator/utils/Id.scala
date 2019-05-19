@@ -2,6 +2,6 @@ package com.bsgenerator.utils
 
 import java.util.UUID
 
-object Helpers {
+object Id {
   def randomId(): String = UUID.randomUUID.toString
 }

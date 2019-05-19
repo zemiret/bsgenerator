@@ -2,12 +2,12 @@ package com.bsgenerator.crawler
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.bsgenerator.crawler.requester.CrawlingBalancer
-import com.bsgenerator.utils.Helpers
+import com.bsgenerator.utils.Id
 
 object CrawlingSupervisor {
   def props(): Props = Props(new CrawlingSupervisor())
 
-  final case class HandleUrl(url: String)
+  final case class HandleUrlRequest(url: String)
 }
 
 class CrawlingSupervisor
@@ -21,7 +21,7 @@ class CrawlingSupervisor
   def waitForMessage(pendingCrawlingRequests: Set[String]): Receive = {
     case CrawlingBalancer.Response(requestId, content) =>
       receivedCrawlingResponse(pendingCrawlingRequests, requestId, content)
-    case CrawlingSupervisor.HandleUrl(url) =>
+    case CrawlingSupervisor.HandleUrlRequest(url) =>
       receivedHandleUrl(pendingCrawlingRequests, url)
   }
 
@@ -48,10 +48,10 @@ class CrawlingSupervisor
                        pendingCrawlingRequests: Set[String],
                        url: String
                        ): Unit = {
-    val requestId = Helpers.randomId
+    val requestId = Id.randomId()
     val newPendingCrawlingRequests = pendingCrawlingRequests + requestId
 
-    crawlingBalancer ! CrawlingBalancer.HandleUrl(requestId, url, self)
+    crawlingBalancer ! CrawlingBalancer.HandleUrlRequest(requestId, url, self)
 
     context become waitForMessage(newPendingCrawlingRequests)
   }

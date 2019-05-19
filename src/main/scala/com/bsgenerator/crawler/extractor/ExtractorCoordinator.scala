@@ -2,17 +2,16 @@ package com.bsgenerator.crawler.extractor
 
 import akka.actor.{Actor, ActorRef, Props}
 import com.bsgenerator.crawler.CrawlingSupervisor
-import com.bsgenerator.utils.Helpers
+import com.bsgenerator.utils.Id
 
 object ExtractorCoordinator {
   def props: Props = Props(new ExtractorCoordinator)
 
-  //  Messages:
-  final case class Extract(content: String, baseUrl: String)
+  final case class ExtractRequest(content: String, baseUrl: String)
 
-  final case class ExtractedContentAndLinks(requestId: String, content: Option[String], links: Set[String])
+  final case class ExtractedResponse(requestId: String, content: Option[String], links: Set[String])
 
-  final case class FilteredLinks(requestId: String, links: Set[String])
+  final case class FilteredLinksResponse(requestId: String, links: Set[String])
 
 }
 
@@ -23,7 +22,7 @@ class ExtractorCoordinator extends Actor {
   protected val extractorsRouter: ActorRef = context.actorOf(ExtractorsRouter.props())
 
   // For now, there is only one. In case it's bottleneck, create router for it as well
-  protected val storeManager: ActorRef = context.actorOf(StoreManager.props)
+  protected val storeManager: ActorRef = context.actorOf(Store.props)
 
 
   override def receive: Receive = waitForMessage(Set.empty, Set.empty, Set.empty)
@@ -31,13 +30,13 @@ class ExtractorCoordinator extends Actor {
   def waitForMessage(extractRequests: Set[String],
                      filterRequests: Set[String],
                      storeLinksRequests: Set[String]): Receive = {
-    case ExtractedContentAndLinks(requestId, content, links) =>
+    case ExtractedResponse(requestId, content, links) =>
       receivedExtractedData(extractRequests, filterRequests, storeLinksRequests, requestId, content, links)
-    case FilteredLinks(requestId, links) =>
+    case FilteredLinksResponse(requestId, links) =>
       receivedFilteredLinks(extractRequests, filterRequests, storeLinksRequests, requestId, links)
-    case Extract(content, baseUrl) =>
+    case ExtractRequest(content, baseUrl) =>
       receivedExtractRequest(extractRequests, filterRequests, storeLinksRequests, content, baseUrl)
-    case StoreManager.LinksStored(requestId) =>
+    case Store.LinksStoredResponse(requestId) =>
       receivedLinksStored(extractRequests, filterRequests, storeLinksRequests, requestId)
   }
 
@@ -47,10 +46,10 @@ class ExtractorCoordinator extends Actor {
                              content: String,
                              baseUrl: String) = {
 
-    val requestId = Helpers.randomId()
+    val requestId = Id.randomId()
     val newExtractRequests = extractRequests + requestId
 
-    extractorsRouter ! ExtractorsRouter.Extract(requestId, content, baseUrl, self)
+    extractorsRouter ! ExtractorsRouter.ExtractRequest(requestId, content, baseUrl, self)
 
     context become waitForMessage(
       newExtractRequests,
@@ -67,15 +66,15 @@ class ExtractorCoordinator extends Actor {
                             links: Set[String]) = {
     val newExtractRequests = extractRequests - requestId
 
-    val filterRequestId = Helpers.randomId()
+    val filterRequestId = Id.randomId()
     val newFilterRequests = filterRequests + filterRequestId
 
     content match {
       case Some(contentString) =>
-        storeManager ! StoreManager.StoreContent(requestId, contentString)
+        storeManager ! Store.StoreContentRequest(requestId, contentString)
       case _ =>
     }
-    storeManager ! StoreManager.FilterPresentLinks(filterRequestId, links)
+    storeManager ! Store.FilterLinksRequest(filterRequestId, links)
 
     context become waitForMessage(newExtractRequests, newFilterRequests, storeLinksRequests)
   }
@@ -86,13 +85,13 @@ class ExtractorCoordinator extends Actor {
                             requestId: String,
                             links: Set[String]) = {
 
-    links.foreach(link => context.parent ! CrawlingSupervisor.HandleUrl(link))
+    links.foreach(link => context.parent ! CrawlingSupervisor.HandleUrlRequest(link))
     val newFilterRequests = filterRequests - requestId
 
-    val storeRequestId = Helpers.randomId()
+    val storeRequestId = Id.randomId()
     val newStoreLinksRequests = storeLinksRequests + storeRequestId
 
-    storeManager ! StoreManager.StoreLinks(storeRequestId, links)
+    storeManager ! Store.StoreLinksRequest(storeRequestId, links)
 
     context become waitForMessage(extractRequests, newFilterRequests, newStoreLinksRequests)
   }

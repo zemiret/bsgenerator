@@ -26,8 +26,8 @@ class CrawlingBalancingRouterTest(_system: ActorSystem)
         override protected val router: ActorRef = routerProbe.ref
       }))
 
-      router ! CrawlingBalancingRouter.HandleUrl("id", "someUrl", senderProbe.ref)
-      routerProbe.expectMsg(CrawlingRequestHandler.HandleUrl("id", "someUrl"))
+      router ! CrawlingBalancingRouter.HandleUrlRequest("id", "someUrl", senderProbe.ref)
+      routerProbe.expectMsg(CrawlingRequestHandler.HandleUrlRequest("id", "someUrl"))
     }
   }
 }

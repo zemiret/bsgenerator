@@ -2,7 +2,7 @@ package com.bsgenerator.crawler
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
-import com.bsgenerator.crawler.CrawlingSupervisor.HandleUrl
+import com.bsgenerator.crawler.CrawlingSupervisor.HandleUrlRequest
 import com.bsgenerator.crawler.requester.CrawlingBalancer
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
@@ -26,8 +26,8 @@ class CrawlingSupervisorTest(_system: ActorSystem)
         override protected val crawlingBalancer: ActorRef = probe.ref
       }))
 
-      crawlingSupervisor ! HandleUrl("someUrl")
-      probe.expectMsgClass(classOf[CrawlingBalancer.HandleUrl])
+      crawlingSupervisor ! HandleUrlRequest("someUrl")
+      probe.expectMsgClass(classOf[CrawlingBalancer.HandleUrlRequest])
     }
   }
 }

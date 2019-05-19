@@ -8,7 +8,7 @@ import com.bsgenerator.extractor.link.AttributeLinkExtractor
 object ExtractorsRouter {
   def props(): Props = Props(new ExtractorsRouter)
 
-  final case class Extract(RequestId: String, content: String, baseUrl: String, senderActor: ActorRef)
+  final case class ExtractRequest(RequestId: String, content: String, baseUrl: String, senderActor: ActorRef)
 
 }
 
@@ -20,7 +20,7 @@ class ExtractorsRouter extends Actor {
     )
 
   def receive = {
-    case ExtractorsRouter.Extract(requestId, content, baseUrl, senderActor) =>
-      router.tell(Extractor.Extract(requestId, content, baseUrl), senderActor)
+    case ExtractorsRouter.ExtractRequest(requestId, content, baseUrl, senderActor) =>
+      router.tell(Extractor.ExtractRequest(requestId, content, baseUrl), senderActor)
   }
 }
