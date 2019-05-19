@@ -1,11 +1,11 @@
-package com.bsgenerator.crawler.requester
+package com.bsgenerator.crawler.extractor
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 
-class CrawlingBalancingRouterTest(_system: ActorSystem)
+class ExtractorsRouterTest(_system: ActorSystem)
   extends TestKit(_system)
     with Matchers
     with WordSpecLike
@@ -17,18 +17,19 @@ class CrawlingBalancingRouterTest(_system: ActorSystem)
     shutdown(system)
   }
 
-  "router balancer" should {
-    "router work to children" in {
+  "extractors router" should {
+    "route work to children" in {
       val routerProbe = TestProbe()
       val senderProbe = TestProbe()
 
-      val router = TestActorRef(Props(new CrawlingBalancingRouter {
+      val router = TestActorRef(Props(new ExtractorsRouter {
         override protected val router: ActorRef = routerProbe.ref
       }))
 
-      router ! CrawlingBalancingRouter.HandleUrlRequest("id", "someUrl", senderProbe.ref)
-      routerProbe.expectMsg(CrawlingRequestHandler.HandleUrlRequest("id", "someUrl"))
+      router ! ExtractorsRouter.ExtractRequest("id", "content", "base", senderProbe.ref)
+      routerProbe.expectMsg(Extractor.ExtractRequest("id", "content", "base"))
     }
   }
 }
+
 

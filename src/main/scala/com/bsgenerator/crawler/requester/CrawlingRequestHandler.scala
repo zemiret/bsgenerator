@@ -14,7 +14,7 @@ object CrawlingRequestHandler {
   def props(httpClient: HttpService): Props =
     Props(new CrawlingRequestHandler(httpClient))
 
-  final case class HandleUrl(requestId: String, url: String)
+  final case class HandleUrlRequest(requestId: String, url: String)
 
   final case class Response(requestId: String, content: String)
 
@@ -31,7 +31,7 @@ class CrawlingRequestHandler(httpClient: HttpService)
 
 
   override def receive: Receive = {
-    case HandleUrl(requestId, url) =>
+    case HandleUrlRequest(requestId, url) =>
       val _sender = sender()
       httpClient.get(url).onComplete {
         case Success(httpResponse: HttpResponse) =>

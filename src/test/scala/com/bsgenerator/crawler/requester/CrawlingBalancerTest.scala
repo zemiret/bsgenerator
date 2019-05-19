@@ -2,7 +2,7 @@ package com.bsgenerator.crawler.requester
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
-import com.bsgenerator.crawler.requester.CrawlingBalancer.{DelayUrlHandling}
+import com.bsgenerator.crawler.requester.CrawlingBalancer.DelayUrlHandlingRequest
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 class CrawlingBalancerTest(_system: ActorSystem)
@@ -25,8 +25,8 @@ class CrawlingBalancerTest(_system: ActorSystem)
         override protected val throttler: ActorRef = throttlerProbe.ref
       }))
 
-      crawlingBalancer ! CrawlingBalancer.HandleUrl("id", "someUrl", respondTo.ref)
-      throttlerProbe.expectMsg(CrawlingBalancer.DelayUrlHandling("id", "someUrl", respondTo.ref))
+      crawlingBalancer ! CrawlingBalancer.HandleUrlRequest("id", "someUrl", respondTo.ref)
+      throttlerProbe.expectMsg(CrawlingBalancer.DelayUrlHandlingRequest("id", "someUrl", respondTo.ref))
     }
 
     "call router handler on new requests" in {
@@ -34,18 +34,18 @@ class CrawlingBalancerTest(_system: ActorSystem)
       val routerHandler = TestProbe()
       val respondTo = TestProbe()
       val crawlingBalancer = TestActorRef(Props(new CrawlingBalancer {
-        override protected val router: ActorRef = routerHandler.ref
+        override protected val requestHandlersRouter: ActorRef = routerHandler.ref
       }))
 
-      crawlingBalancer ! DelayUrlHandling("id", "someUrl", respondTo.ref)
-      routerHandler.expectMsg(CrawlingBalancingRouter.HandleUrl("id", "someUrl", crawlingBalancer))
+      crawlingBalancer ! DelayUrlHandlingRequest("id", "someUrl", respondTo.ref)
+      routerHandler.expectMsg(CrawlingBalancingRouter.HandleUrlRequest("id", "someUrl", crawlingBalancer))
     }
 
     "re-send correct request to awaiting actor" in {
       val respondProbe = TestProbe()
       val throttleBalancer = system.actorOf(CrawlingBalancer.props)
 
-      throttleBalancer ! CrawlingBalancer.DelayUrlHandling("id1", "url1", respondProbe.ref)
+      throttleBalancer ! CrawlingBalancer.DelayUrlHandlingRequest("id1", "url1", respondProbe.ref)
       throttleBalancer ! CrawlingRequestHandler.Response("id1", "content")
       respondProbe.expectMsg(CrawlingBalancer.Response("id1", "content"))
     }
@@ -54,7 +54,7 @@ class CrawlingBalancerTest(_system: ActorSystem)
       val respondProbe = TestProbe()
       val throttleBalancer = system.actorOf(CrawlingBalancer.props)
 
-      throttleBalancer ! CrawlingBalancer.DelayUrlHandling("id1", "url1", respondProbe.ref)
+      throttleBalancer ! CrawlingBalancer.DelayUrlHandlingRequest("id1", "url1", respondProbe.ref)
       throttleBalancer ! CrawlingRequestHandler.Response("INCORRECTID", "content")
       respondProbe.expectNoMessage()
     }
