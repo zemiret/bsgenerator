@@ -1,7 +1,6 @@
 package com.bsgenerator.crawler
 
 import akka.actor.ActorSystem
-import com.bsgenerator.crawler.model.Store
 
 import scala.io.StdIn
 
@@ -9,8 +8,10 @@ object BsGeneratorApp extends App {
   val system = ActorSystem("bsgenerator")
 
   try {
+    val testSite = Store.createSite("http://www.batey.info").get
+
     val crawlingSupervisor = system.actorOf(
-      CrawlingSupervisor.props("http://www.batey.info"),
+      CrawlingSupervisor.props(testSite),
       "crawling-supervisor")
 
 

@@ -2,6 +2,10 @@ package com.bsgenerator.utils
 
 import java.util.UUID
 
-object Id {
+trait IId {
+  def randomId(): String
+}
+
+object Id extends IId {
   def randomId(): String = UUID.randomUUID.toString
 }

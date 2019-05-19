@@ -17,5 +17,5 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion,
   "org.jsoup" % "jsoup" % jSoupVersion,
   "org.scalikejdbc" %% "scalikejdbc" % "3.3.+",
-  "org.postgresql" % "postgresql" % "9.4-1200-jdbc41"
+  "org.postgresql" % "postgresql" % "9.4-1200-jdbc41",
 )
