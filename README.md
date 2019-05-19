@@ -13,7 +13,7 @@ Then create db:
 ```bash
 sudo -iu postgres
 pqsl
-create database bsgenerator
+create database bsgenerator;
 ```
 
 And finally run `setupdb.sql` from this directory.
