@@ -15,7 +15,7 @@ class CrawlingSupervisorTest(_system: ActorSystem)
 
   def this() = this(ActorSystem("bsgenerator"))
 
-  val testsite = new Site(123, "baseUrl")
+  val testSite = new Site(123, "baseUrl")
 
   override def afterAll: Unit = {
     shutdown(system)
@@ -25,7 +25,7 @@ class CrawlingSupervisorTest(_system: ActorSystem)
     "delegate url handling to balancer" in {
       // This is a very crude solution to inject a child. There are better ways!
       val probe = TestProbe()
-      val crawlingSupervisor = TestActorRef(Props(new CrawlingSupervisor(testsite) {
+      val crawlingSupervisor = TestActorRef(Props(new CrawlingSupervisor(testSite) {
         override protected val crawlingBalancer: ActorRef = probe.ref
       }))
 
