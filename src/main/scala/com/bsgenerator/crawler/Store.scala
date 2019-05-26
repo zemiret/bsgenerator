@@ -1,7 +1,7 @@
 package com.bsgenerator.crawler
 
 import akka.actor.{Actor, ActorLogging, Props}
-import com.bsgenerator.crawler.model.{Site, VisitedLink}
+import com.bsgenerator.crawler.model.{AllowedBase, Site, VisitedLink}
 import scalikejdbc._
 
 object Store {
@@ -36,17 +36,45 @@ object Store {
     ConnectionPool.closeAll()
   }
 
-  def createSite(baseUrl: String): Option[Site] = {
-    sql"insert into sites (baseUrl) values ($baseUrl)".update().apply()
-
-    sql"select * from sites where baseUrl = $baseUrl"
+  def createSite(baseUrl: String, allowedBases: Set[String]): Option[Site] = {
+    var site = sql"select * from sites where baseUrl = $baseUrl"
       .map(rs => Site(rs))
       .first
       .apply()
+
+    if (site.isEmpty) {
+      sql"insert into sites (baseUrl) values ($baseUrl)".update().apply()
+
+      site = sql"select * from sites where baseUrl = $baseUrl"
+        .map(rs => Site(rs))
+        .first
+        .apply()
+
+      val siteId = site.get.id
+      allowedBases.foreach(url =>
+        sql"insert into allowedBases (url, siteId) values ($url, $siteId)".update().apply()
+      )
+    }
+
+    site
   }
 
-  def insertContent(content: String, siteId: Long): SQL[Nothing, NoExtractor] = {
-    sql"insert into articles (siteId, content) values ($siteId, $content)"
+
+  def insertContent(content: String, siteId: Long) = {
+    sql"insert into articles (siteId, content) values ($siteId, $content)".update().apply()
+  }
+
+  def insertLinks(links: Set[String], siteId: Long) = {
+    links foreach { url =>
+      sql"insert into visitedLinks (siteId, url) values ($siteId, $url)".update().apply()
+    }
+  }
+
+  def getAllowedBases(siteId: Long) = {
+    sql"select * from allowedBases where siteId = $siteId"
+      .map(rs => AllowedBase(rs))
+      .list
+      .apply()
   }
 
   def getLinks(siteId: Long) = {
@@ -54,12 +82,6 @@ object Store {
       .map(rs => VisitedLink(rs))
       .list
       .apply()
-  }
-
-  def insertLinks(links: Set[String], siteId: Long) = {
-    links foreach { url =>
-      sql"insert into visitedLinks (siteId, url) values ($siteId, $url)"
-    }
   }
 
   init()
@@ -71,11 +93,13 @@ class Store extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case StoreContentRequest(content, siteId) =>
+      log.info("Received store content: {}", content)
       insertContent(content, siteId)
     case FilterLinksRequest(requestId, links, siteId) =>
       val filtered = filterLinks(links, siteId)
       sender ! FilteredLinksResponse(requestId, filtered)
     case StoreLinksRequest(requestId, links, siteId) =>
+      log.info("Received store links: {}", links)
       insertLinks(links, siteId)
       sender ! LinksStoredResponse(requestId)
   }
@@ -84,6 +108,19 @@ class Store extends Actor with ActorLogging {
     val allLinks = Store.getLinks(siteId)
       .map(visitedLink => visitedLink.url)
       .toSet
-    links -- allLinks
+
+    val allowedBases = Store.getAllowedBases(siteId).map(base => base.url)
+    val siteLinks = links.filter(link => allowedBases.contains(strippedLink(link)))
+
+    siteLinks -- allLinks
+  }
+
+  private def strippedLink(link: String) = {
+    val splitted = link.split("/")
+    if (splitted.length >= 3) {
+      splitted(2)
+    } else {
+      splitted(0)
+    }
   }
 }

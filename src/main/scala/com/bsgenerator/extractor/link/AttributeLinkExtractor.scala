@@ -8,6 +8,9 @@ class AttributeLinkExtractor extends LinkExtractor {
   def extract(content: String, context: String): Set[String] = {
     val document = Jsoup.parse(content, context)
     val linkElements = document.getElementsByTag("a").asScala.toArray
-    linkElements.map(_.attr("abs:href")).toSet
+    linkElements
+      .map(_.attr("abs:href"))
+      .filter(link => !link.isEmpty)
+      .toSet
   }
 }

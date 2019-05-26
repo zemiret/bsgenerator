@@ -7,6 +7,14 @@ create table if not exists sites
     baseUrl varchar(2083) not null
 );
 
+-- Allowed base urls to crawl at the given site
+create table if not exists allowedBases
+(
+    id     serial primary key,
+    url    varchar(2083)                not null,
+    siteId serial references sites (id) not null
+);
+
 create table if not exists articles
 (
     id      serial primary key,
