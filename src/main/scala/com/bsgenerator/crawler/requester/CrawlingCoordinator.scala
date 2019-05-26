@@ -7,8 +7,8 @@ import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
 
 import scala.concurrent.duration._
 
-object CrawlingBalancer {
-  def props: Props = Props(new CrawlingBalancer)
+object CrawlingCoordinator {
+  def props: Props = Props(new CrawlingCoordinator)
 
   final case class HandleUrlRequest(requestId: String, url: String, respondTo: ActorRef)
 
@@ -18,7 +18,7 @@ object CrawlingBalancer {
 
 }
 
-class CrawlingBalancer extends Actor with ActorLogging {
+class CrawlingCoordinator extends Actor with ActorLogging {
   implicit val system: ActorSystem = context.system
   implicit val materializer: Materializer = ActorMaterializer.create(system)
 
@@ -28,16 +28,16 @@ class CrawlingBalancer extends Actor with ActorLogging {
     .to(Sink.actorRef(self, NotUsed))
     .run()
 
-  protected val requestHandlersRouter: ActorRef = context.actorOf(CrawlingBalancingRouter.props())
+  protected val requestHandlersRouter: ActorRef = context.actorOf(CrawlingRouter.props())
 
   override def receive: Receive = waitForMessage(Map.empty)
 
 
   def waitForMessage(pendingRequestsToActor: Map[String, ActorRef]): Receive = {
-    case CrawlingBalancer.HandleUrlRequest(requestId, url, respondTo) =>
-      throttler ! CrawlingBalancer.DelayUrlHandlingRequest(requestId, url, respondTo)
+    case CrawlingCoordinator.HandleUrlRequest(requestId, url, respondTo) =>
+      throttler ! CrawlingCoordinator.DelayUrlHandlingRequest(requestId, url, respondTo)
 
-    case CrawlingBalancer.DelayUrlHandlingRequest(requestId, url, respondTo) =>
+    case CrawlingCoordinator.DelayUrlHandlingRequest(requestId, url, respondTo) =>
       receivedHandleUrlRequest(pendingRequestsToActor, requestId, url, respondTo)
 
     case CrawlingRequestHandler.Response(requestId, content) =>
@@ -50,7 +50,7 @@ class CrawlingBalancer extends Actor with ActorLogging {
                                 url: String,
                                 respondTo: ActorRef): Unit = {
 
-    requestHandlersRouter ! CrawlingBalancingRouter.HandleUrlRequest(requestId, url, self)
+    requestHandlersRouter ! CrawlingRouter.HandleUrlRequest(requestId, url, self)
     val newPendingRequestsToActor = pendingRequestsToActor + (requestId -> respondTo)
 
     context become waitForMessage(newPendingRequestsToActor)
@@ -66,7 +66,7 @@ class CrawlingBalancer extends Actor with ActorLogging {
       context become waitForMessage(pendingRequestsToActor)
     } else {
       val respondTo = pendingRequestsToActor(requestId)
-      respondTo ! CrawlingBalancer.Response(requestId, content)
+      respondTo ! CrawlingCoordinator.Response(requestId, content)
       val newPendingRequestsToActor = pendingRequestsToActor - requestId
 
       context become waitForMessage(newPendingRequestsToActor)

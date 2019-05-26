@@ -3,7 +3,8 @@ package com.bsgenerator.crawler
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
 import com.bsgenerator.crawler.CrawlingSupervisor.HandleUrlRequest
-import com.bsgenerator.crawler.requester.CrawlingBalancer
+import com.bsgenerator.crawler.model.Site
+import com.bsgenerator.crawler.requester.CrawlingCoordinator
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 class CrawlingSupervisorTest(_system: ActorSystem)
@@ -14,6 +15,8 @@ class CrawlingSupervisorTest(_system: ActorSystem)
 
   def this() = this(ActorSystem("bsgenerator"))
 
+  val testSite = new Site(123, "baseUrl")
+
   override def afterAll: Unit = {
     shutdown(system)
   }
@@ -22,12 +25,12 @@ class CrawlingSupervisorTest(_system: ActorSystem)
     "delegate url handling to balancer" in {
       // This is a very crude solution to inject a child. There are better ways!
       val probe = TestProbe()
-      val crawlingSupervisor = TestActorRef(Props(new CrawlingSupervisor("baseUrl") {
+      val crawlingSupervisor = TestActorRef(Props(new CrawlingSupervisor(testSite) {
         override protected val crawlingBalancer: ActorRef = probe.ref
       }))
 
       crawlingSupervisor ! HandleUrlRequest("someUrl")
-      probe.expectMsgClass(classOf[CrawlingBalancer.HandleUrlRequest])
+      probe.expectMsgClass(classOf[CrawlingCoordinator.HandleUrlRequest])
     }
   }
 }

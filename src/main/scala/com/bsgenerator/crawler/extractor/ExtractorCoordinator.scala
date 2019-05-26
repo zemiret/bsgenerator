@@ -1,55 +1,57 @@
 package com.bsgenerator.crawler.extractor
 
-import akka.actor.{Actor, ActorRef, Props}
-import com.bsgenerator.crawler.CrawlingSupervisor
-import com.bsgenerator.utils.Id
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import com.bsgenerator.crawler.model.Site
+import com.bsgenerator.crawler.{CrawlingSupervisor, Store}
+import com.bsgenerator.utils.{IId, Id}
 
 object ExtractorCoordinator {
-  def props: Props = Props(new ExtractorCoordinator)
+  def props(): Props = Props(new ExtractorCoordinator)
 
-  final case class ExtractRequest(content: String, baseUrl: String)
+  final case class ExtractRequest(content: String, site: Site)
 
   final case class ExtractedResponse(requestId: String, content: Option[String], links: Set[String])
 
-  final case class FilteredLinksResponse(requestId: String, links: Set[String])
 
 }
 
-class ExtractorCoordinator extends Actor {
+class ExtractorCoordinator extends Actor with ActorLogging {
 
   import ExtractorCoordinator._
 
   protected val extractorsRouter: ActorRef = context.actorOf(ExtractorsRouter.props())
 
   // For now, there is only one. In case it's bottleneck, create router for it as well
-  protected val storeManager: ActorRef = context.actorOf(Store.props)
+  protected val store: ActorRef = context.actorOf(Store.props())
+
+  protected val idGenerator: IId = Id
 
 
-  override def receive: Receive = waitForMessage(Set.empty, Set.empty, Set.empty)
+  override def receive: Receive = waitForMessage(Map.empty, Map.empty, Map.empty)
 
-  def waitForMessage(extractRequests: Set[String],
-                     filterRequests: Set[String],
-                     storeLinksRequests: Set[String]): Receive = {
+  def waitForMessage(extractRequests: Map[String, Site],
+                     filterRequests: Map[String, Long],
+                     storeLinksRequests: Map[String, Long]): Receive = {
     case ExtractedResponse(requestId, content, links) =>
       receivedExtractedData(extractRequests, filterRequests, storeLinksRequests, requestId, content, links)
-    case FilteredLinksResponse(requestId, links) =>
+    case Store.FilteredLinksResponse(requestId, links) =>
       receivedFilteredLinks(extractRequests, filterRequests, storeLinksRequests, requestId, links)
-    case ExtractRequest(content, baseUrl) =>
-      receivedExtractRequest(extractRequests, filterRequests, storeLinksRequests, content, baseUrl)
+    case ExtractRequest(content, site) =>
+      receivedExtractRequest(extractRequests, filterRequests, storeLinksRequests, content, site)
     case Store.LinksStoredResponse(requestId) =>
       receivedLinksStored(extractRequests, filterRequests, storeLinksRequests, requestId)
   }
 
-  def receivedExtractRequest(extractRequests: Set[String],
-                             filterRequests: Set[String],
-                             storeLinksRequests: Set[String],
+  def receivedExtractRequest(extractRequests: Map[String, Site],
+                             filterRequests: Map[String, Long],
+                             storeLinksRequests: Map[String, Long],
                              content: String,
-                             baseUrl: String) = {
+                             site: Site) = {
 
-    val requestId = Id.randomId()
-    val newExtractRequests = extractRequests + requestId
+    val requestId = idGenerator.randomId()
+    val newExtractRequests = extractRequests + (requestId -> site)
 
-    extractorsRouter ! ExtractorsRouter.ExtractRequest(requestId, content, baseUrl, self)
+    extractorsRouter ! ExtractorsRouter.ExtractRequest(requestId, content, site.baseUrl, self)
 
     context become waitForMessage(
       newExtractRequests,
@@ -58,47 +60,74 @@ class ExtractorCoordinator extends Actor {
     )
   }
 
-  def receivedExtractedData(extractRequests: Set[String],
-                            filterRequests: Set[String],
-                            storeLinksRequests: Set[String],
+  def receivedExtractedData(extractRequests: Map[String, Site],
+                            filterRequests: Map[String, Long],
+                            storeLinksRequests: Map[String, Long],
                             requestId: String,
                             content: Option[String],
                             links: Set[String]) = {
+
+    val siteOption = extractRequests.get(requestId)
+    var siteId: Long = -1
     val newExtractRequests = extractRequests - requestId
 
-    val filterRequestId = Id.randomId()
-    val newFilterRequests = filterRequests + filterRequestId
+    siteOption match {
+      case Some(someSite) =>
+        siteId = someSite.id
+      case _ =>
+        log.warning("Invalid extract response: requestId: {}", requestId)
+        context become waitForMessage(newExtractRequests, filterRequests, storeLinksRequests)
+    }
+
 
     content match {
-      case Some(contentString) =>
-        storeManager ! Store.StoreContentRequest(requestId, contentString)
-      case _ =>
+      case Some(someContent) =>
+        store ! Store.StoreContentRequest(someContent, siteId)
+      case _ => log.info("Couldn't extract content, extractRequestId: {}", requestId)
     }
-    storeManager ! Store.FilterLinksRequest(filterRequestId, links)
 
-    context become waitForMessage(newExtractRequests, newFilterRequests, storeLinksRequests)
+    if (links.nonEmpty) {
+      val filterRequestId = idGenerator.randomId()
+      val newFilterRequests = filterRequests + (filterRequestId -> siteId)
+
+      store ! Store.FilterLinksRequest(filterRequestId, links, siteId)
+      context become waitForMessage(newExtractRequests, newFilterRequests, storeLinksRequests)
+    } else {
+      context become waitForMessage(newExtractRequests, filterRequests, storeLinksRequests)
+    }
   }
 
-  def receivedFilteredLinks(extractRequests: Set[String],
-                            filterRequests: Set[String],
-                            storeLinksRequests: Set[String],
+  def receivedFilteredLinks(extractRequests: Map[String, Site],
+                            filterRequests: Map[String, Long],
+                            storeLinksRequests: Map[String, Long],
                             requestId: String,
                             links: Set[String]) = {
 
-    links.foreach(link => context.parent ! CrawlingSupervisor.HandleUrlRequest(link))
+    val siteIdOption = filterRequests.get(requestId)
     val newFilterRequests = filterRequests - requestId
 
-    val storeRequestId = Id.randomId()
-    val newStoreLinksRequests = storeLinksRequests + storeRequestId
+    siteIdOption match {
+      case Some(siteId) =>
+        links.foreach(link => context.parent ! CrawlingSupervisor.HandleUrlRequest(link))
 
-    storeManager ! Store.StoreLinksRequest(storeRequestId, links)
+        val storeRequestId = idGenerator.randomId()
+        val newStoreLinksRequests = storeLinksRequests + (storeRequestId -> siteId)
 
-    context become waitForMessage(extractRequests, newFilterRequests, newStoreLinksRequests)
+        store ! Store.StoreLinksRequest(storeRequestId, links, siteId)
+
+        context become waitForMessage(extractRequests, newFilterRequests, newStoreLinksRequests)
+      case _ =>
+        log.warning("Invalid filter links response: requestId: {}", requestId)
+        context become waitForMessage(extractRequests, newFilterRequests, storeLinksRequests)
+    }
+
+
+
   }
 
-  def receivedLinksStored(extractRequests: Set[String],
-                          filterRequests: Set[String],
-                          storeLinksRequests: Set[String],
+  def receivedLinksStored(extractRequests: Map[String, Site],
+                          filterRequests: Map[String, Long],
+                          storeLinksRequests: Map[String, Long],
                           requestId: String) = {
     val newStoreLinkRequests = storeLinksRequests - requestId
 
