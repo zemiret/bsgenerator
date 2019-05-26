@@ -10,7 +10,7 @@ class AttributeLinkExtractor extends LinkExtractor {
     val linkElements = document.getElementsByTag("a").asScala.toArray
     linkElements
       .map(_.attr("abs:href"))
-      .filter(link => !link.isEmpty)
+      .filter(link => !link.isEmpty && !link.contains("mailto:"))
       .toSet
   }
 }
