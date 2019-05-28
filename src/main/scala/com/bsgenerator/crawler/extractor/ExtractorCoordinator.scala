@@ -2,15 +2,16 @@ package com.bsgenerator.crawler.extractor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.bsgenerator.crawler.model.Site
-import com.bsgenerator.crawler.{CrawlingSupervisor, Store}
+import com.bsgenerator.crawler.CrawlingSupervisor
+import com.bsgenerator.crawler.store.Store
 import com.bsgenerator.utils.{IId, Id}
 
 object ExtractorCoordinator {
   def props(): Props = Props(new ExtractorCoordinator)
 
-  final case class ExtractRequest(content: String, site: Site)
+  final case class ExtractRequest(url: String, content: String, site: Site)
 
-  final case class ExtractedResponse(requestId: String, content: Option[String], links: Set[String])
+  final case class ExtractedResponse(requestId: String, url: String, content: Option[String], links: Set[String])
 
 
 }
@@ -32,12 +33,12 @@ class ExtractorCoordinator extends Actor with ActorLogging {
   def waitForMessage(extractRequests: Map[String, Site],
                      filterRequests: Map[String, Long],
                      storeLinksRequests: Map[String, Long]): Receive = {
-    case ExtractedResponse(requestId, content, links) =>
-      receivedExtractedData(extractRequests, filterRequests, storeLinksRequests, requestId, content, links)
+    case ExtractedResponse(requestId, url, content, links) =>
+      receivedExtractedData(extractRequests, filterRequests, storeLinksRequests, requestId, url, content, links)
     case Store.FilteredLinksResponse(requestId, links) =>
       receivedFilteredLinks(extractRequests, filterRequests, storeLinksRequests, requestId, links)
-    case ExtractRequest(content, site) =>
-      receivedExtractRequest(extractRequests, filterRequests, storeLinksRequests, content, site)
+    case ExtractRequest(url, content, site) =>
+      receivedExtractRequest(extractRequests, filterRequests, storeLinksRequests, url, content, site)
     case Store.LinksStoredResponse(requestId) =>
       receivedLinksStored(extractRequests, filterRequests, storeLinksRequests, requestId)
   }
@@ -45,13 +46,14 @@ class ExtractorCoordinator extends Actor with ActorLogging {
   def receivedExtractRequest(extractRequests: Map[String, Site],
                              filterRequests: Map[String, Long],
                              storeLinksRequests: Map[String, Long],
+                             url: String,
                              content: String,
                              site: Site) = {
 
     val requestId = idGenerator.randomId()
     val newExtractRequests = extractRequests + (requestId -> site)
 
-    extractorsRouter ! ExtractorsRouter.ExtractRequest(requestId, content, site.baseUrl, self)
+    extractorsRouter ! ExtractorsRouter.ExtractRequest(requestId, url, content, site.baseUrl, self)
 
     context become waitForMessage(
       newExtractRequests,
@@ -64,6 +66,7 @@ class ExtractorCoordinator extends Actor with ActorLogging {
                             filterRequests: Map[String, Long],
                             storeLinksRequests: Map[String, Long],
                             requestId: String,
+                            url: String,
                             content: Option[String],
                             links: Set[String]) = {
 
@@ -82,7 +85,7 @@ class ExtractorCoordinator extends Actor with ActorLogging {
 
     content match {
       case Some(someContent) =>
-        store ! Store.StoreContentRequest(someContent, siteId)
+        store ! Store.StoreContentRequest(someContent, siteId, url)
       case _ => log.info("Couldn't extract content, extractRequestId: {}", requestId)
     }
 

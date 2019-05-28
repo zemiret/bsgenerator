@@ -22,10 +22,10 @@ class CrawlingRequestHandlerTest(_system: ActorSystem)
       val crawlRequestHandlerActor = system.actorOf(CrawlingRequestHandler.props(new MockHttpService))
 
       crawlRequestHandlerActor.tell(CrawlingRequestHandler.HandleUrlRequest("id1", "someurl"), probe.ref)
-      probe.expectMsg(CrawlingRequestHandler.Response(requestId = "id1", "mockResponse"))
+      probe.expectMsg(CrawlingRequestHandler.Response(requestId = "id1", "someurl", "mockResponse"))
 
       crawlRequestHandlerActor.tell(CrawlingRequestHandler.HandleUrlRequest("id2", "protocol://someurl2.kanapka.rg"), probe.ref)
-      probe.expectMsg(CrawlingRequestHandler.Response(requestId = "id2", "mockResponse"))
+      probe.expectMsg(CrawlingRequestHandler.Response(requestId = "id2", "protocol://someurl2.kanapka.rg", "mockResponse"))
     }
   }
 }

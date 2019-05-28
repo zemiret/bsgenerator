@@ -26,8 +26,8 @@ class ExtractorsRouterTest(_system: ActorSystem)
         override protected val router: ActorRef = routerProbe.ref
       }))
 
-      router ! ExtractorsRouter.ExtractRequest("id", "content", "base", senderProbe.ref)
-      routerProbe.expectMsg(Extractor.ExtractRequest("id", "content", "base"))
+      router ! ExtractorsRouter.ExtractRequest("id", "url", "content", "base", senderProbe.ref)
+      routerProbe.expectMsg(Extractor.ExtractRequest("id", "url", "content", "base"))
     }
   }
 }

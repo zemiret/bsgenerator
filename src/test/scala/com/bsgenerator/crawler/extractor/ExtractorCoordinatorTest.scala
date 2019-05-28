@@ -3,7 +3,8 @@ package com.bsgenerator.crawler.extractor
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
 import com.bsgenerator.crawler.model.Site
-import com.bsgenerator.crawler.{CrawlingSupervisor, Store}
+import com.bsgenerator.crawler.CrawlingSupervisor
+import com.bsgenerator.crawler.store.Store
 import com.bsgenerator.utils.IId
 import mocks.extractor.MockId
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
@@ -19,7 +20,7 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
 
   def this() = this(ActorSystem("bsgenerator"))
 
-  val testsite = new Site(123, "baseUrl")
+  val testSite = new Site(123, "baseUrl")
 
   override def afterAll: Unit = {
     shutdown(system)
@@ -34,7 +35,7 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
         override protected val extractorsRouter: ActorRef = routerHandler.ref
       }))
 
-      extractorCoordinator ! ExtractorCoordinator.ExtractRequest("content", testsite)
+      extractorCoordinator ! ExtractorCoordinator.ExtractRequest("content", "url", testSite)
 
       routerHandler.expectMsgType(classTag[ExtractorsRouter.ExtractRequest])
     }
@@ -48,6 +49,7 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
       val links = Set("url1", "url2")
       extractorCoordinator ! ExtractorCoordinator.ExtractedResponse(
         "id",
+        "url",
         Option("some content"),
         links
       )
@@ -65,6 +67,7 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
       val links = Set("url1", "url2")
       extractorCoordinator ! ExtractorCoordinator.ExtractedResponse(
         "id",
+        "url",
         Option.empty,
         links
       )
@@ -87,9 +90,9 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
 
     "store filtered links when request is matched" in {
       val storeHandler = TestProbe()
-      val extractRequest = Map(MockId.id -> testsite)
-      val filterRequests = Map(MockId.id -> testsite.id)
-      val storeLinkRequests = Map(MockId.id -> testsite.id)
+      val extractRequest = Map(MockId.id -> testSite)
+      val filterRequests = Map(MockId.id -> testSite.id)
+      val storeLinkRequests = Map(MockId.id -> testSite.id)
 
       val extractorCoordinator = TestActorRef(Props(new ExtractorCoordinator {
         override protected val store: ActorRef = storeHandler.ref
@@ -103,15 +106,15 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
 
       extractorCoordinator ! Store.FilteredLinksResponse(MockId.id, links)
 
-      storeHandler.expectMsg(Store.StoreLinksRequest(MockId.id, links, testsite.id))
+      storeHandler.expectMsg(Store.StoreLinksRequest(MockId.id, links, testSite.id))
     }
 
     "notify parent about new links to handle" in {
       val parent = TestProbe()
 
-      val extractRequest = Map(MockId.id -> testsite)
-      val filterRequests = Map(MockId.id -> testsite.id)
-      val storeLinkRequests = Map(MockId.id -> testsite.id)
+      val extractRequest = Map(MockId.id -> testSite)
+      val filterRequests = Map(MockId.id -> testSite.id)
+      val storeLinkRequests = Map(MockId.id -> testSite.id)
 
       val extractorCoordinator = TestActorRef(Props(new ExtractorCoordinator {
         override protected val idGenerator: IId = MockId
