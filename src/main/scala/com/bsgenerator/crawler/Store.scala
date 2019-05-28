@@ -110,10 +110,12 @@ class Store extends Actor with ActorLogging {
       .toSet
 
     val allowedBases = Store.getAllowedBases(siteId).map(base => base.url)
-    val siteLinks = links.filter(link => allowedBases.contains(strippedLink(link)))
+    val siteLinks = links.map(trimFragment).filter(link => allowedBases.contains(strippedLink(link)))
 
     siteLinks -- allLinks
   }
+
+  private def trimFragment(link: String)= link.split("#")(0)
 
   private def strippedLink(link: String) = {
     val splitted = link.split("/")
