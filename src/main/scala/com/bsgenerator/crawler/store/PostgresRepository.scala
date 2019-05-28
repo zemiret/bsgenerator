@@ -45,8 +45,8 @@ class PostgresRepository extends Repository {
     site
   }
 
-  def insertContent(content: String, siteId: Long, url: String) = {
-    sql"insert into articles (siteId, url, content) values ($siteId, $url, $content)".update().apply()
+  def insertContent(header: String, content: String, siteId: Long, url: String) = {
+    sql"insert into articles (siteId, url, header, content) values ($siteId, $url, $header, $content)".update().apply()
   }
 
   def insertLinks(links: Set[String], siteId: Long) = {

@@ -11,7 +11,7 @@ object ExtractorCoordinator {
 
   final case class ExtractRequest(url: String, content: String, site: Site)
 
-  final case class ExtractedResponse(requestId: String, url: String, content: Option[String], links: Set[String])
+  final case class ExtractedResponse(requestId: String, url: String, header: Option[String], content: Option[String], links: Set[String])
 
 
 }
@@ -33,8 +33,8 @@ class ExtractorCoordinator extends Actor with ActorLogging {
   def waitForMessage(extractRequests: Map[String, Site],
                      filterRequests: Map[String, Long],
                      storeLinksRequests: Map[String, Long]): Receive = {
-    case ExtractedResponse(requestId, url, content, links) =>
-      receivedExtractedData(extractRequests, filterRequests, storeLinksRequests, requestId, url, content, links)
+    case ExtractedResponse(requestId, url, header, content, links) =>
+      receivedExtractedData(extractRequests, filterRequests, storeLinksRequests, requestId, url, header, content, links)
     case Store.FilteredLinksResponse(requestId, links) =>
       receivedFilteredLinks(extractRequests, filterRequests, storeLinksRequests, requestId, links)
     case ExtractRequest(url, content, site) =>
@@ -67,6 +67,7 @@ class ExtractorCoordinator extends Actor with ActorLogging {
                             storeLinksRequests: Map[String, Long],
                             requestId: String,
                             url: String,
+                            header: Option[String],
                             content: Option[String],
                             links: Set[String]) = {
 
@@ -85,7 +86,7 @@ class ExtractorCoordinator extends Actor with ActorLogging {
 
     content match {
       case Some(someContent) =>
-        store ! Store.StoreContentRequest(someContent, siteId, url)
+        store ! Store.StoreContentRequest(header.getOrElse(""), someContent, siteId, url)
       case _ => log.info("Couldn't extract content, extractRequestId: {}", requestId)
     }
 

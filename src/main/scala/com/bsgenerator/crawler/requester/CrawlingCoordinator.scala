@@ -24,7 +24,7 @@ class CrawlingCoordinator extends Actor with ActorLogging {
 
   protected val throttler: ActorRef = Source
     .actorRef(100000, OverflowStrategy.dropNew)
-    .throttle(40, 1.minute)
+    .throttle(120, 1.minute)
     .to(Sink.actorRef(self, NotUsed))
     .run()
 

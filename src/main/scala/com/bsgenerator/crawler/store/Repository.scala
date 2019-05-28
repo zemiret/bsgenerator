@@ -10,7 +10,7 @@ trait Repository {
 
   def createSite(baseUrl: String, allowedBases: Set[String]): Option[Site];
 
-  def insertContent(content: String, siteId: Long, url: String);
+  def insertContent(header: String, content: String, siteId: Long, url: String);
 
   def insertLinks(links: Set[String], siteId: Long);
 

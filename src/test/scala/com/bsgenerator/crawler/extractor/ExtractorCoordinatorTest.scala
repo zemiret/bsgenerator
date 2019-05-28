@@ -50,6 +50,7 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
       extractorCoordinator ! ExtractorCoordinator.ExtractedResponse(
         "id",
         "url",
+        Option("some header"),
         Option("some content"),
         links
       )
@@ -68,6 +69,7 @@ class ExtractorCoordinatorTest(_system: ActorSystem)
       extractorCoordinator ! ExtractorCoordinator.ExtractedResponse(
         "id",
         "url",
+        Option.empty,
         Option.empty,
         links
       )

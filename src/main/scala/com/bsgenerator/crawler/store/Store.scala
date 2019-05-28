@@ -7,7 +7,7 @@ object Store {
   val repository: PostgresRepository = new PostgresRepository
 
   //  Akka protocol definition
-  final case class StoreContentRequest(content: String, siteId: Long, url: String)
+  final case class StoreContentRequest(header: String, content: String, siteId: Long, url: String)
 
   final case class StoreLinksRequest(requestId: String, links: Set[String], siteId: Long)
 
@@ -22,9 +22,9 @@ class Store extends Actor with ActorLogging {
   import Store._
 
   override def receive: Receive = {
-    case StoreContentRequest(content, siteId, url) =>
-      log.info("Received store content: {}", content)
-      repository.insertContent(content, siteId, url)
+    case StoreContentRequest(header, content, siteId, url) =>
+      log.info("Received store content:{} - {}", header, content.replace("\n", ""))
+      repository.insertContent(header, content, siteId, url)
     case FilterLinksRequest(requestId, links, siteId) =>
       val filtered = filterLinks(links, siteId)
       sender ! FilteredLinksResponse(requestId, filtered)

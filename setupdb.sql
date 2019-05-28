@@ -20,6 +20,7 @@ create table if not exists articles
     id      serial primary key,
     siteId  serial references sites (id) not null,
     url     varchar(2083)                not null,
+    header  text                         not null,
     content text                         not null
 );
 
