@@ -1,6 +1,6 @@
-package com.bsgenerator.crawler.store
+package com.bsgenerator.repository
 
-import com.bsgenerator.crawler.model.{AllowedBase, Site, VisitedLink}
+import com.bsgenerator.model.{AllowedBase, Article, Site, VisitedLink}
 
 trait Repository {
 
@@ -17,4 +17,6 @@ trait Repository {
   def getAllowedBases(siteId: Long): List[AllowedBase];
 
   def getLinks(siteId: Long): List[VisitedLink];
+
+  def getArticles(): List[Article];
 }

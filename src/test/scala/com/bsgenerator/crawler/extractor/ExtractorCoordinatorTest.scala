@@ -2,9 +2,8 @@ package com.bsgenerator.crawler.extractor
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
-import com.bsgenerator.crawler.model.Site
-import com.bsgenerator.crawler.CrawlingSupervisor
-import com.bsgenerator.crawler.store.Store
+import com.bsgenerator.model.Site
+import com.bsgenerator.crawler.{CrawlingSupervisor, Store}
 import com.bsgenerator.utils.IId
 import mocks.extractor.MockId
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}

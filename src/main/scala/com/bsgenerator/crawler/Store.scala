@@ -1,6 +1,7 @@
-package com.bsgenerator.crawler.store
+package com.bsgenerator.crawler
 
 import akka.actor.{Actor, ActorLogging, Props}
+import com.bsgenerator.repository.{PostgresRepository, Repository}
 
 object Store {
   def props(): Props = Props(new Store)
