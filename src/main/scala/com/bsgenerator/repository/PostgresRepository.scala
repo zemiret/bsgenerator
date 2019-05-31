@@ -1,6 +1,6 @@
-package com.bsgenerator.crawler.store
+package com.bsgenerator.repository
 
-import com.bsgenerator.crawler.model.{AllowedBase, Site, VisitedLink}
+import com.bsgenerator.model.{AllowedBase, Article, Site, VisitedLink}
 import scalikejdbc._
 
 class PostgresRepository extends Repository {
@@ -65,6 +65,13 @@ class PostgresRepository extends Repository {
   def getLinks(siteId: Long) = {
     sql"select * from visitedLinks where siteId = $siteId"
       .map(rs => VisitedLink(rs))
+      .list
+      .apply()
+  }
+
+  def getArticles() = {
+    sql"select * from articles"
+      .map(rs => Article(rs))
       .list
       .apply()
   }

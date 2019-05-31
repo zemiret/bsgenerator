@@ -1,7 +1,6 @@
 package com.bsgenerator.crawler
 
 import akka.actor.ActorSystem
-import com.bsgenerator.crawler.store.Store
 
 import scala.io.StdIn
 

@@ -1,4 +1,4 @@
-package com.bsgenerator.crawler.model
+package com.bsgenerator.model
 
 import scalikejdbc.{SQLSyntaxSupport, WrappedResultSet}
 

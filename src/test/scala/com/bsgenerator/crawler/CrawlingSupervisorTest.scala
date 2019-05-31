@@ -3,7 +3,7 @@ package com.bsgenerator.crawler
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestActorRef, TestKit, TestProbe}
 import com.bsgenerator.crawler.CrawlingSupervisor.HandleUrlRequest
-import com.bsgenerator.crawler.model.Site
+import com.bsgenerator.model.Site
 import com.bsgenerator.crawler.requester.CrawlingCoordinator
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 

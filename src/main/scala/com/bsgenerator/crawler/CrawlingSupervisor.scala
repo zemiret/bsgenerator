@@ -2,7 +2,7 @@ package com.bsgenerator.crawler
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.bsgenerator.crawler.extractor.ExtractorCoordinator
-import com.bsgenerator.crawler.model.Site
+import com.bsgenerator.model.Site
 import com.bsgenerator.crawler.requester.CrawlingCoordinator
 import com.bsgenerator.utils.{IId, Id}
 
