@@ -16,7 +16,7 @@ object CrawlingRequestHandler {
 
   final case class HandleUrlRequest(requestId: String, url: String)
 
-  final case class Response(requestId: String, content: String)
+  final case class Response(requestId: String, url: String, content: String)
 
 }
 
@@ -36,7 +36,7 @@ class CrawlingRequestHandler(httpClient: HttpService)
       httpClient.get(url).onComplete {
         case Success(httpResponse: HttpResponse) =>
           val response = Await.result(Unmarshal(httpResponse.entity).to[String], 1.second)
-          _sender ! Response(requestId, response)
+          _sender ! Response(requestId, url, response)
         case Failure(_) => log.warning("Request to {} failed.", url)
       }
   }

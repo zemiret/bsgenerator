@@ -46,8 +46,8 @@ class CrawlingCoordinatorTest(_system: ActorSystem)
       val throttleBalancer = system.actorOf(CrawlingCoordinator.props)
 
       throttleBalancer ! CrawlingCoordinator.DelayUrlHandlingRequest("id1", "url1", respondProbe.ref)
-      throttleBalancer ! CrawlingRequestHandler.Response("id1", "content")
-      respondProbe.expectMsg(CrawlingCoordinator.Response("id1", "content"))
+      throttleBalancer ! CrawlingRequestHandler.Response("id1", "url1", "content")
+      respondProbe.expectMsg(CrawlingCoordinator.Response("id1", "url1", "content"))
     }
 
     "not send a response on incorrect requestId" in {
@@ -55,7 +55,7 @@ class CrawlingCoordinatorTest(_system: ActorSystem)
       val throttleBalancer = system.actorOf(CrawlingCoordinator.props)
 
       throttleBalancer ! CrawlingCoordinator.DelayUrlHandlingRequest("id1", "url1", respondProbe.ref)
-      throttleBalancer ! CrawlingRequestHandler.Response("INCORRECTID", "content")
+      throttleBalancer ! CrawlingRequestHandler.Response("INCORRECTID", "url1", "content")
       respondProbe.expectNoMessage()
     }
   }

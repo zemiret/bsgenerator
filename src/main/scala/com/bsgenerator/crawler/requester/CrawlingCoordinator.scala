@@ -14,7 +14,7 @@ object CrawlingCoordinator {
 
   final case class DelayUrlHandlingRequest(requestId: String, url: String, respondTo: ActorRef)
 
-  final case class Response(requestId: String, content: String)
+  final case class Response(requestId: String, url: String, content: String)
 
 }
 
@@ -23,8 +23,8 @@ class CrawlingCoordinator extends Actor with ActorLogging {
   implicit val materializer: Materializer = ActorMaterializer.create(system)
 
   protected val throttler: ActorRef = Source
-    .actorRef(10000, OverflowStrategy.dropNew)
-    .throttle(20, 1.minute)
+    .actorRef(100000, OverflowStrategy.dropNew)
+    .throttle(120, 1.minute)
     .to(Sink.actorRef(self, NotUsed))
     .run()
 
@@ -40,8 +40,8 @@ class CrawlingCoordinator extends Actor with ActorLogging {
     case CrawlingCoordinator.DelayUrlHandlingRequest(requestId, url, respondTo) =>
       receivedHandleUrlRequest(pendingRequestsToActor, requestId, url, respondTo)
 
-    case CrawlingRequestHandler.Response(requestId, content) =>
-      receivedResponse(pendingRequestsToActor, requestId, content)
+    case CrawlingRequestHandler.Response(requestId, url, content) =>
+      receivedResponse(pendingRequestsToActor, requestId, url, content)
   }
 
   def receivedHandleUrlRequest(
@@ -59,6 +59,7 @@ class CrawlingCoordinator extends Actor with ActorLogging {
   def receivedResponse(
                         pendingRequestsToActor: Map[String, ActorRef],
                         requestId: String,
+                        url: String,
                         content: String): Unit = {
 
     if (!pendingRequestsToActor.contains(requestId)) {
@@ -66,7 +67,7 @@ class CrawlingCoordinator extends Actor with ActorLogging {
       context become waitForMessage(pendingRequestsToActor)
     } else {
       val respondTo = pendingRequestsToActor(requestId)
-      respondTo ! CrawlingCoordinator.Response(requestId, content)
+      respondTo ! CrawlingCoordinator.Response(requestId, url, content)
       val newPendingRequestsToActor = pendingRequestsToActor - requestId
 
       context become waitForMessage(newPendingRequestsToActor)

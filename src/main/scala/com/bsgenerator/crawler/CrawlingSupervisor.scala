@@ -25,8 +25,8 @@ class CrawlingSupervisor(private val site: Site)
 
 
   def waitForMessage(pendingCrawlingRequests: Set[String]): Receive = {
-    case CrawlingCoordinator.Response(requestId, content) =>
-      receivedCrawlingResponse(pendingCrawlingRequests, requestId, content)
+    case CrawlingCoordinator.Response(requestId, url, content) =>
+      receivedCrawlingResponse(pendingCrawlingRequests, requestId, content, url)
     case CrawlingSupervisor.HandleUrlRequest(url) =>
       receivedHandleUrl(pendingCrawlingRequests, url)
   }
@@ -35,13 +35,14 @@ class CrawlingSupervisor(private val site: Site)
   def receivedCrawlingResponse(
                                 pendingCrawlingRequests: Set[String],
                                 requestId: String,
-                                content: String): Unit = {
+                                content: String,
+                                url: String): Unit = {
 
     if (!pendingCrawlingRequests.contains(requestId)) {
       log.warning("Encountered unexpected requestId: {}", requestId)
       context become waitForMessage(pendingCrawlingRequests)
     } else {
-      extractorCoordinator ! ExtractorCoordinator.ExtractRequest(content, site)
+      extractorCoordinator ! ExtractorCoordinator.ExtractRequest(url, content, site)
 
       val newPendingCrawlingRequests = pendingCrawlingRequests - requestId
 

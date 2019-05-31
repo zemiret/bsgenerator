@@ -1,6 +1,7 @@
 package com.bsgenerator.crawler
 
 import akka.actor.ActorSystem
+import com.bsgenerator.crawler.store.Store
 
 import scala.io.StdIn
 
@@ -8,15 +9,14 @@ object BsGeneratorApp extends App {
   val system = ActorSystem("bsgenerator")
 
   try {
-
-    val testSite = Store.createSite("http://www.batey.info",
+    Store.repository.init()
+    val testSite = Store.repository.createSite("http://www.batey.info",
       Set("www.batey.info")
     ).get
 
     val crawlingSupervisor = system.actorOf(
       CrawlingSupervisor.props(testSite),
       "crawling-supervisor")
-
 
     for (_ <- 1 to 1) {
       crawlingSupervisor ! CrawlingSupervisor.HandleUrlRequest("http://www.batey.info/akka-testing-messages-sent-to-child.html")
@@ -25,6 +25,6 @@ object BsGeneratorApp extends App {
     StdIn.readLine
   } finally {
     system.terminate
-    Store.cleanup()
+    Store.repository.cleanup()
   }
 }

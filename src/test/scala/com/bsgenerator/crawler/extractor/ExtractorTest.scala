@@ -2,7 +2,7 @@ package com.bsgenerator.crawler.extractor
 
 import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
-import mocks.extractor.{ArticleExtractorMock, LinkExtractorMock}
+import mocks.extractor.{ArticleExtractorMock, HeaderExtractorMock, LinkExtractorMock}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 
@@ -25,14 +25,15 @@ class ExtractorTest(_system: ActorSystem)
 
       val extractor = system.actorOf(
         Extractor.props(
+          new HeaderExtractorMock("header"),
           new ArticleExtractorMock("content"),
           new LinkExtractorMock(links)
         ))
 
-      extractor.tell(Extractor.ExtractRequest("id", "content", "baseUrl"), senderProbe.ref)
+      extractor.tell(Extractor.ExtractRequest("id", "url", "content", "baseUrl"), senderProbe.ref)
 
       senderProbe.expectMsg(
-        ExtractorCoordinator.ExtractedResponse("id", Option("content"), links)
+        ExtractorCoordinator.ExtractedResponse("id", "url", Option("header"), Option("content"), links)
       )
     }
   }
