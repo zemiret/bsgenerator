@@ -11,7 +11,7 @@ object GeneratorApp extends App {
   val headerCleanup: Regex = "[!'\":.”?,-]".r
 
   private def cleanupArticle(article: Article): Article = {
-    Article(article.id, article.siteId, article.url, headerCleanup.replaceAllIn(article.header.strip(), ""), article.content)
+    Article(article.id, article.siteId, article.url, headerCleanup.replaceAllIn(article.header.trim(), ""), article.content)
   }
 
   repository.init()
