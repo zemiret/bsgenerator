@@ -39,19 +39,3 @@ configCopyTask := {
 }
 
 (Compile / compile) := ((Compile / compile) dependsOn configCopyTask).value
-
-//lazy val root = (project in file("."))
-//  .settings(
-//    run in Compile := {
-//      (run in Compile).evaluated
-//
-//      println("Copying config file...")
-//      val filename = "application.conf"
-//      val classDir = (Compile / packageBin / classDirectory).value
-//      Files.copy(
-//        FileSystems.getDefault.getPath(filename),
-//        new File(classDir.toPath.toString, filename).toPath
-//      )
-//      println("Config copied.")
-//    }
-//  )
