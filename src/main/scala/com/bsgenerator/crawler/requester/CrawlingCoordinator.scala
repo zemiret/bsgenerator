@@ -4,6 +4,7 @@ import akka.NotUsed
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
+import com.bsgenerator.Config
 
 import scala.concurrent.duration._
 
@@ -23,8 +24,8 @@ class CrawlingCoordinator extends Actor with ActorLogging {
   implicit val materializer: Materializer = ActorMaterializer.create(system)
 
   protected val throttler: ActorRef = Source
-    .actorRef(100000, OverflowStrategy.dropNew)
-    .throttle(120, 1.minute)
+    .actorRef(Config.config.getInt("bsgenerator.requests.bufSize"), OverflowStrategy.dropNew)
+    .throttle(Config.config.getInt("bsgenerator.requests.requestsPerMinute"), 1.minute)
     .to(Sink.actorRef(self, NotUsed))
     .run()
 
