@@ -1,3 +1,5 @@
+import java.nio.file.{FileSystems, Files, StandardCopyOption}
+
 name := "bsgenerator"
 
 version := "0.1"
@@ -19,3 +21,21 @@ libraryDependencies ++= Seq(
   "org.scalikejdbc" %% "scalikejdbc" % "3.3.+",
   "org.postgresql" % "postgresql" % "9.4-1200-jdbc41",
 )
+
+lazy val configCopyTask = taskKey[Unit]("Config copy task")
+configCopyTask := {
+  println("Copying config...")
+  val filename = "application.conf"
+  val classDir = (Compile / packageBin / classDirectory).value.toPath
+
+  Files.createDirectories(classDir)
+
+  Files.copy(
+    FileSystems.getDefault.getPath(filename),
+    new File(classDir.toString, filename).toPath,
+    StandardCopyOption.REPLACE_EXISTING
+  )
+  println("Copying config done.")
+}
+
+(Compile / compile) := ((Compile / compile) dependsOn configCopyTask).value

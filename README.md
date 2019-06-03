@@ -18,5 +18,11 @@ create database bsgenerator;
 
 And finally run `setupdb.sql` from this directory.
 
+## Running
+In sbt console: 
+```
+run
+```
+
 
 

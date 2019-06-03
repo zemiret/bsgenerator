@@ -1,5 +1,6 @@
 package com.bsgenerator.repository
 
+import com.bsgenerator.Config
 import com.bsgenerator.model.{AllowedBase, Article, Site, VisitedLink}
 import scalikejdbc._
 
@@ -8,10 +9,10 @@ class PostgresRepository extends Repository {
 
   //  Init db connection. Remember to call cleanup when finishing program
   def init(): Unit = {
-    val url = "jdbc:postgresql://localhost/bsgenerator"
-    val driver = "org.postgresql.Driver"
-    val username = "root"
-    val password = "root"
+    val url = Config.config.getString("bsgenerator.db.url")
+    val driver = Config.config.getString("bsgenerator.db.driver")
+    val username = Config.config.getString("bsgenerator.db.username")
+    val password = Config.config.getString("bsgenerator.db.password")
 
     Class.forName(driver)
     ConnectionPool.singleton(url, username, password)

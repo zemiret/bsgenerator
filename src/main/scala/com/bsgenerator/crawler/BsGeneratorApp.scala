@@ -17,9 +17,7 @@ object BsGeneratorApp extends App {
       CrawlingSupervisor.props(testSite),
       "crawling-supervisor")
 
-    for (_ <- 1 to 1) {
-      crawlingSupervisor ! CrawlingSupervisor.HandleUrlRequest("http://www.batey.info/akka-testing-messages-sent-to-child.html")
-    }
+    crawlingSupervisor ! CrawlingSupervisor.HandleUrlRequest("http://www.batey.info/akka-testing-messages-sent-to-child.html")
 
     StdIn.readLine
   } finally {
