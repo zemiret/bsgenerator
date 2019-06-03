@@ -9,15 +9,16 @@ object BsGeneratorApp extends App {
 
   try {
     Store.repository.init()
-    val testSite = Store.repository.createSite("http://www.batey.info",
-      Set("www.batey.info")
+    val testSite = Store.repository.createSite("https://www.fronda.pl",
+      Set("www.fronda.pl")
     ).get
 
     val crawlingSupervisor = system.actorOf(
       CrawlingSupervisor.props(testSite),
       "crawling-supervisor")
 
-    crawlingSupervisor ! CrawlingSupervisor.HandleUrlRequest("http://www.batey.info/akka-testing-messages-sent-to-child.html")
+//    crawlingSupervisor ! CrawlingSupervisor.HandleUrlRequest("http://www.batey.info/akka-testing-messages-sent-to-child.html")
+    crawlingSupervisor ! CrawlingSupervisor.HandleUrlRequest("https://www.fronda.pl/a/marcin-wolski-dla-frondy-spryty-plan-w-kosiniaka-kamysza-byc-moze-to-nie-psl-a-po-przestanie-istniec,127778.html")
 
     StdIn.readLine
   } finally {

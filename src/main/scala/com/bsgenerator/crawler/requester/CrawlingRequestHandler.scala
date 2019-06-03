@@ -32,6 +32,8 @@ class CrawlingRequestHandler(httpClient: HttpService)
 
   override def receive: Receive = {
     case HandleUrlRequest(requestId, url) =>
+      log.info("Requesting url: {}", url)
+
       val _sender = sender()
       httpClient.get(url).onComplete {
         case Success(httpResponse: HttpResponse) =>
