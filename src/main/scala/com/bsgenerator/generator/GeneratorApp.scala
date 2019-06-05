@@ -18,7 +18,7 @@ object GeneratorApp extends App {
   try {
     val articles = repository.getArticles().filter(art => !art.header.toLowerCase.contains("frond")).map(cleanupArticle).toSet
     generator.train(articles)
-    for (_ <- 1 to 20) {
+    for (_ <- 1 to 100) {
       println(generator.generate(10))
     }
   } finally {

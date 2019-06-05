@@ -1,8 +1,8 @@
 package com.bsgenerator.crawler.extractor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import com.bsgenerator.model.Site
 import com.bsgenerator.crawler.{CrawlingSupervisor, Store}
+import com.bsgenerator.model.Site
 import com.bsgenerator.utils.{IId, Id}
 
 object ExtractorCoordinator {
@@ -106,8 +106,13 @@ class ExtractorCoordinator extends Actor with ActorLogging {
                             requestId: String,
                             links: Set[String]) = {
 
-    val siteIdOption = filterRequests.get(requestId)
+
     val newFilterRequests = filterRequests - requestId
+    if (links.isEmpty) {
+      context become waitForMessage(extractRequests, newFilterRequests, storeLinksRequests)
+    }
+
+    val siteIdOption = filterRequests.get(requestId)
 
     siteIdOption match {
       case Some(siteId) =>
@@ -123,9 +128,6 @@ class ExtractorCoordinator extends Actor with ActorLogging {
         log.warning("Invalid filter links response: requestId: {}", requestId)
         context become waitForMessage(extractRequests, newFilterRequests, storeLinksRequests)
     }
-
-
-
   }
 
   def receivedLinksStored(extractRequests: Map[String, Site],
