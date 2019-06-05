@@ -54,6 +54,8 @@ class ExtractorCoordinator extends Actor with ActorLogging {
 
     extractorsRouter ! ExtractorsRouter.ExtractRequest(requestId, url, content, site.baseUrl, self)
 
+    // TODO: set link as visited in store
+
     context become waitForMessage(
       newExtractRequests,
       filterRequests,

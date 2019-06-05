@@ -26,7 +26,9 @@ create table if not exists articles
 
 create table if not exists visitedLinks
 (
-    id     serial primary key,
-    siteId serial references sites (id) not null,
-    url    varchar(2083)                not null
+    id      serial primary key,
+    siteId  serial references sites (id) not null,
+    url     varchar(2083)                not null,
+    visited boolean                      not null default false
 );
+

@@ -17,6 +17,12 @@ object Store {
   final case class FilterLinksRequest(requestId: String, links: Set[String], siteId: Long)
 
   final case class FilteredLinksResponse(requestId: String, links: Set[String])
+
+
+  // TODO: Think how to create some pool for Store actors (repository can't be singleton?)
+//  final case class SetLinkVisitedRequest(requestId: String, link: String)
+//
+//  final case class SetLinkVisitedResponse(requestId: String)
 }
 
 class Store extends Actor with ActorLogging {
@@ -57,5 +63,5 @@ class Store extends Actor with ActorLogging {
     }
   }
 
-  def getRepository(): Repository = repository;
+  def getRepository(): Repository = repository
 }
