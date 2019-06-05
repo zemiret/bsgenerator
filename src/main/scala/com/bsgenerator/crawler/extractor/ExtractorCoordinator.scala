@@ -108,25 +108,26 @@ class ExtractorCoordinator extends Actor with ActorLogging {
 
 
     val newFilterRequests = filterRequests - requestId
+
     if (links.isEmpty) {
       context become waitForMessage(extractRequests, newFilterRequests, storeLinksRequests)
-    }
+    } else {
+      val siteIdOption = filterRequests.get(requestId)
 
-    val siteIdOption = filterRequests.get(requestId)
+      siteIdOption match {
+        case Some(siteId) =>
+          links.foreach(link => context.parent ! CrawlingSupervisor.HandleUrlRequest(link))
 
-    siteIdOption match {
-      case Some(siteId) =>
-        links.foreach(link => context.parent ! CrawlingSupervisor.HandleUrlRequest(link))
+          val storeRequestId = idGenerator.randomId()
+          val newStoreLinksRequests = storeLinksRequests + (storeRequestId -> siteId)
 
-        val storeRequestId = idGenerator.randomId()
-        val newStoreLinksRequests = storeLinksRequests + (storeRequestId -> siteId)
+          store ! Store.StoreLinksRequest(storeRequestId, links, siteId)
 
-        store ! Store.StoreLinksRequest(storeRequestId, links, siteId)
-
-        context become waitForMessage(extractRequests, newFilterRequests, newStoreLinksRequests)
-      case _ =>
-        log.warning("Invalid filter links response: requestId: {}", requestId)
-        context become waitForMessage(extractRequests, newFilterRequests, storeLinksRequests)
+          context become waitForMessage(extractRequests, newFilterRequests, newStoreLinksRequests)
+        case _ =>
+          log.warning("Invalid filter links response: requestId: {}", requestId)
+          context become waitForMessage(extractRequests, newFilterRequests, storeLinksRequests)
+      }
     }
   }
 
