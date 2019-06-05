@@ -1,8 +1,8 @@
 package com.bsgenerator.crawler.extractor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import com.bsgenerator.model.Site
 import com.bsgenerator.crawler.{CrawlingSupervisor, Store}
+import com.bsgenerator.model.Site
 import com.bsgenerator.utils.{IId, Id}
 
 object ExtractorCoordinator {
@@ -106,26 +106,29 @@ class ExtractorCoordinator extends Actor with ActorLogging {
                             requestId: String,
                             links: Set[String]) = {
 
-    val siteIdOption = filterRequests.get(requestId)
+
     val newFilterRequests = filterRequests - requestId
 
-    siteIdOption match {
-      case Some(siteId) =>
-        links.foreach(link => context.parent ! CrawlingSupervisor.HandleUrlRequest(link))
+    if (links.isEmpty) {
+      context become waitForMessage(extractRequests, newFilterRequests, storeLinksRequests)
+    } else {
+      val siteIdOption = filterRequests.get(requestId)
 
-        val storeRequestId = idGenerator.randomId()
-        val newStoreLinksRequests = storeLinksRequests + (storeRequestId -> siteId)
+      siteIdOption match {
+        case Some(siteId) =>
+          links.foreach(link => context.parent ! CrawlingSupervisor.HandleUrlRequest(link))
 
-        store ! Store.StoreLinksRequest(storeRequestId, links, siteId)
+          val storeRequestId = idGenerator.randomId()
+          val newStoreLinksRequests = storeLinksRequests + (storeRequestId -> siteId)
 
-        context become waitForMessage(extractRequests, newFilterRequests, newStoreLinksRequests)
-      case _ =>
-        log.warning("Invalid filter links response: requestId: {}", requestId)
-        context become waitForMessage(extractRequests, newFilterRequests, storeLinksRequests)
+          store ! Store.StoreLinksRequest(storeRequestId, links, siteId)
+
+          context become waitForMessage(extractRequests, newFilterRequests, newStoreLinksRequests)
+        case _ =>
+          log.warning("Invalid filter links response: requestId: {}", requestId)
+          context become waitForMessage(extractRequests, newFilterRequests, storeLinksRequests)
+      }
     }
-
-
-
   }
 
   def receivedLinksStored(extractRequests: Map[String, Site],
