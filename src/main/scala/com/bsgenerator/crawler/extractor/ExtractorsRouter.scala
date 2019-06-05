@@ -1,7 +1,7 @@
 package com.bsgenerator.crawler.extractor
 
 import akka.actor.{Actor, ActorRef, Props}
-import akka.routing.{SmallestMailboxPool}
+import akka.routing.SmallestMailboxPool
 import com.bsgenerator.Config
 import com.bsgenerator.extractor.article.HeuristicExtractor
 import com.bsgenerator.extractor.header.OpenGraphTitleExtractor
@@ -15,7 +15,7 @@ object ExtractorsRouter {
 }
 
 class ExtractorsRouter extends Actor {
-  protected var router: ActorRef =
+  protected val router: ActorRef =
     context.actorOf(
       SmallestMailboxPool(Config.config.getInt("bsgenerator.extractor.poolSize"))
         .props(Extractor.props(new OpenGraphTitleExtractor, new HeuristicExtractor, new AttributeLinkExtractor)),
