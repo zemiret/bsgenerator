@@ -23,15 +23,15 @@ object ArticleCharacterLevelIterator {
     chars += ('Ą', 'Ć', 'Ę', 'Ł', 'Ń', 'Ó', 'Ś', 'Ż', 'Ź')
     // punctuation
     chars += ('!', '&', '(', ')', '?', '-', '\'', '"', ',', '.', ':', ';', ' ', '\t')
-    return chars.toSet
+    chars.toSet
   }
 
 }
 
 class ArticleCharacterLevelIterator(batches: Int, batchLength: Int, articles: Seq[Article]) extends DataSetIterator {
-  val validCharacters = ArticleCharacterLevelIterator.characterSet().toList
-  var pointers = preparePointers()
-  val data = articles.flatMap(a => a.content + ' ')
+  val validCharacters: List[Char] = ArticleCharacterLevelIterator.characterSet().toList
+  val data: Seq[Char] = articles.flatMap(a => a.content + ' ')
+  var pointers: Seq[Int] = preparePointers()
   var cp = 0
 
   private def preparePointers(): Seq[Int] = Random.shuffle(List.range(0, data.length - 1, batchLength))
@@ -42,15 +42,15 @@ class ArticleCharacterLevelIterator(batches: Int, batchLength: Int, articles: Se
 
   override def next(num: Int): DataSet = {
     val batchSize = Math.min(num, batches)
-    val input = Nd4j.create(Array[Int](batchSize, validCharacters.length, batchLength), 'f');
-    val labels = Nd4j.create(Array[Int](batchSize, validCharacters.length, batchLength), 'f');
+    val input = Nd4j.create(Array[Int](batchSize, validCharacters.length, batchLength), 'f')
+    val labels = Nd4j.create(Array[Int](batchSize, validCharacters.length, batchLength), 'f')
 
-    var i = 0;
+    var i = 0
     for (i <- 0 until batchSize) {
-      val start = pointers(cp);
-      val end = start + batchLength;
+      val start = pointers(cp)
+      val end = start + batchLength
       var charId = charToIdx(data(start))
-      var j = 0;
+      var j = 0
       for (j <- start + 1 until end) {
         val next = charToIdx(data(cp))
         input.putScalar(Array[Int](i, charId, j - 1 - start), 1.0)
@@ -59,8 +59,8 @@ class ArticleCharacterLevelIterator(batches: Int, batchLength: Int, articles: Se
 
       }
     }
-    cp += 1;
-    return new DataSet(input, labels);
+    cp += 1
+    new DataSet(input, labels)
   }
 
   def idxToChar(idx: Int): Char = validCharacters(idx)
@@ -76,11 +76,11 @@ class ArticleCharacterLevelIterator(batches: Int, batchLength: Int, articles: Se
 
   override def batch(): Int = batches
 
-  override def setPreProcessor(preProcessor: DataSetPreProcessor): Unit = throw new UnsupportedOperationException("preprocessor not supported");
+  override def setPreProcessor(preProcessor: DataSetPreProcessor): Unit = throw new UnsupportedOperationException("preprocessor not supported")
 
-  override def getPreProcessor: DataSetPreProcessor = throw new UnsupportedOperationException("preprocessor not supported");
+  override def getPreProcessor: DataSetPreProcessor = throw new UnsupportedOperationException("preprocessor not supported")
 
-  override def getLabels: util.List[String] = throw new UnsupportedOperationException("labels not supported");
+  override def getLabels: util.List[String] = throw new UnsupportedOperationException("labels not supported")
 
   override def totalOutcomes(): Int = validCharacters.size
 
