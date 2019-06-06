@@ -45,12 +45,10 @@ class ArticleCharacterLevelIterator(batches: Int, batchLength: Int, articles: Se
     val input = Nd4j.create(Array[Int](batchSize, validCharacters.length, batchLength), 'f')
     val labels = Nd4j.create(Array[Int](batchSize, validCharacters.length, batchLength), 'f')
 
-    var i = 0
     for (i <- 0 until batchSize) {
       val start = pointers(cp)
       val end = start + batchLength
       var charId = charToIdx(data(start))
-      var j = 0
       for (j <- start + 1 until end) {
         val next = charToIdx(data(cp))
         input.putScalar(Array[Int](i, charId, j - 1 - start), 1.0)

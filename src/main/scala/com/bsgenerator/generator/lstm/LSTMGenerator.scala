@@ -3,8 +3,8 @@ package com.bsgenerator.generator.lstm
 import com.bsgenerator.adapters.NdArrayAdapter
 import com.bsgenerator.generator.Generator
 import com.bsgenerator.model.Article
-import org.deeplearning4j.nn.conf.{BackpropType, MultiLayerConfiguration, NeuralNetConfiguration}
 import org.deeplearning4j.nn.conf.layers.{LSTM, RnnOutputLayer}
+import org.deeplearning4j.nn.conf.{BackpropType, MultiLayerConfiguration, NeuralNetConfiguration}
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener
@@ -24,8 +24,8 @@ class LSTMGenerator extends Generator {
   val generateSamplesEveryNMinibatches = 10
   val seed = 443222
   val rng = new Random(seed)
-  var characters = ArticleCharacterLevelIterator.characterSet().toList
-  val charactersLength = characters.size
+  var characters: List[Char] = ArticleCharacterLevelIterator.characterSet().toList
+  val charactersLength: Int = characters.size
 
 
   //TODO: UI
@@ -35,8 +35,8 @@ class LSTMGenerator extends Generator {
     .seed(seed)
     .l2(0.0001)
     .weightInit(WeightInit.XAVIER)
-    .updater(new Adam(0.006)).
-    list
+    .updater(new Adam(0.006))
+    .list
     .layer(new LSTM.Builder()
       .nIn(charactersLength)
       .nOut(lstmLayerSize)
@@ -93,7 +93,7 @@ class LSTMGenerator extends Generator {
     out = out.tensorAlongDimension(out.size(2) - 1, 1, 0) // previous timestep
 
     val stringBuilders: Array[StringBuilder] = new Array[StringBuilder](samples)
-    for (str <- 0 until stringBuilders.length) stringBuilders(str) = new StringBuilder()
+    for (str <- stringBuilders.indices) stringBuilders(str) = new StringBuilder()
 
     for (_ <- 0 until charsToGen) {
       val next = NdArrayAdapter.zeros(samples, charactersLength)
