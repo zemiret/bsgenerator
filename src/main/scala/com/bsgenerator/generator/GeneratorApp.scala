@@ -14,12 +14,12 @@ object GeneratorApp extends App {
   val characterSet = ArticleCharacterLevelIterator.characterSet()
 
   private def cleanupContent(content: String): String = {
-    content.map(_ match {
+    content.map {
       case c if quote.contains(c) => '"'
       case '\n' => ' '
       case c if !characterSet.contains(c) => '}' // TODO xd
       case c => c
-    }).replaceAll("\\s\\s+", " ").replace("}", "")
+    }.replaceAll("\\s\\s+", " ").replace("}", "")
   }
 
   private def cleanupArticle(article: Article): Article = {
@@ -27,7 +27,7 @@ object GeneratorApp extends App {
   }
 
   private def isActualArticle(article: Article): Boolean = {
-    return article.url.contains("/a/")
+    article.url.contains("/a/")
   }
 
   repository.init()

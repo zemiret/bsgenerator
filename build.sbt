@@ -4,7 +4,7 @@ name := "bsgenerator"
 
 version := "0.1"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.11.12"
 
 lazy val akkaVersion = "2.5.21"
 lazy val akkaHttpVersion = "10.1.8"
@@ -22,10 +22,12 @@ libraryDependencies ++= Seq(
   "org.scalikejdbc" %% "scalikejdbc" % "3.3.+",
   "org.postgresql" % "postgresql" % "9.4-1200-jdbc41",
   "org.deeplearning4j" % "deeplearning4j-core" % nd4jVersion,
+  "org.deeplearning4j" %% "deeplearning4j-ui" % nd4jVersion,
   "org.nd4j" % "nd4j-x86" % "0.4-rc3.8",
   "org.nd4j" % "nd4j-native-platform" % nd4jVersion,
   "org.nd4j" % "nd4j-native" % nd4jVersion
 )
+  .map(_.exclude("ch.qos.logback", "logback-classic"))
 
 lazy val configCopyTask = taskKey[Unit]("Config copy task")
 configCopyTask := {

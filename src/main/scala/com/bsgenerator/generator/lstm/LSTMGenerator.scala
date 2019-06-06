@@ -1,5 +1,7 @@
 package com.bsgenerator.generator.lstm
 
+import java.io.{File, PrintWriter}
+
 import com.bsgenerator.adapters.NdArrayAdapter
 import com.bsgenerator.generator.Generator
 import com.bsgenerator.model.Article
@@ -7,7 +9,11 @@ import org.deeplearning4j.nn.conf.layers.{LSTM, RnnOutputLayer}
 import org.deeplearning4j.nn.conf.{BackpropType, MultiLayerConfiguration, NeuralNetConfiguration}
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
+import org.deeplearning4j.optimize.api.TrainingListener
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener
+import org.deeplearning4j.ui.api.UIServer
+import org.deeplearning4j.ui.stats.StatsListener
+import org.deeplearning4j.ui.storage.FileStatsStorage
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.learning.config.Adam
@@ -29,6 +35,10 @@ class LSTMGenerator extends Generator {
 
 
   //TODO: UI
+
+//  val uiServer: UIServer = UIServer.getInstance
+  val statsStore = new FileStatsStorage(new File("./netstats.dump"))
+//  uiServer.attach(statsStore)
 
   //Set up network configuration:
   val conf: MultiLayerConfiguration = new NeuralNetConfiguration.Builder()
@@ -55,7 +65,16 @@ class LSTMGenerator extends Generator {
 
   val net = new MultiLayerNetwork(conf)
   net.init()
+
   net.setListeners(new ScoreIterationListener(1))
+  net.setListeners(new StatsListener(statsStore))
+
+  val listeners: java.util.List[TrainingListener] = java.util.Arrays.asList(
+    new ScoreIterationListener(1),
+    new StatsListener(statsStore)
+  )
+
+  net.setListeners(listeners)
 
   override def train(corpus: Set[Article]): Unit = {
     val iter = new ArticleCharacterLevelIterator(batches, inputLength, corpus.toSeq)
@@ -73,6 +92,8 @@ class LSTMGenerator extends Generator {
           }
         }
       }
+
+      iter.reset()
     }
   }
 

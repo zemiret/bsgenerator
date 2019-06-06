@@ -50,11 +50,11 @@ class ArticleCharacterLevelIterator(batches: Int, batchLength: Int, articles: Se
       val end = start + batchLength
       var charId = charToIdx(data(start))
       for (j <- start + 1 until end) {
-        val next = charToIdx(data(cp))
+
+        val next = charToIdx(data(j))
         input.putScalar(Array[Int](i, charId, j - 1 - start), 1.0)
         labels.putScalar(Array[Int](i, next, j - 1 - start), 1.0)
         charId = next
-
       }
     }
     cp += 1
