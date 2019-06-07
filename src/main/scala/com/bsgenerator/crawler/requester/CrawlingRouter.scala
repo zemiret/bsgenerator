@@ -2,6 +2,7 @@ package com.bsgenerator.crawler.requester
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.routing._
+import com.bsgenerator.Config
 
 object CrawlingRouter {
   def props(): Props = Props(new CrawlingRouter)
@@ -12,7 +13,8 @@ object CrawlingRouter {
 class CrawlingRouter extends Actor {
   protected val router: ActorRef =
     context.actorOf(
-      BalancingPool(30).props(CrawlingRequestHandler.props(new DefaultHttpService)),
+      BalancingPool(Config.config.getInt("bsgenerator.requests.poolSize"))
+        .props(CrawlingRequestHandler.props(new DefaultHttpService)),
       "crawlingRouter"
     )
 

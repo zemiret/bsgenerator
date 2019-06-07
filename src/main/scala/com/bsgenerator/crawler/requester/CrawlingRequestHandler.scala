@@ -32,10 +32,12 @@ class CrawlingRequestHandler(httpClient: HttpService)
 
   override def receive: Receive = {
     case HandleUrlRequest(requestId, url) =>
+      log.info("Requesting url: {}", url)
+
       val _sender = sender()
       httpClient.get(url).onComplete {
         case Success(httpResponse: HttpResponse) =>
-          val response = Await.result(Unmarshal(httpResponse.entity).to[String], 1.second)
+          val response = Await.result(Unmarshal(httpResponse.entity).to[String], 5.second)
           _sender ! Response(requestId, url, response)
         case Failure(_) => log.warning("Request to {} failed.", url)
       }
