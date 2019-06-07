@@ -1,7 +1,8 @@
 package com.bsgenerator.generator.lstm
 
-import java.io.{File, PrintWriter}
+import java.io.File
 
+import com.bsgenerator.Config
 import com.bsgenerator.adapters.NdArrayAdapter
 import com.bsgenerator.generator.Generator
 import com.bsgenerator.model.Article
@@ -36,10 +37,6 @@ class LSTMGenerator extends Generator {
 
   //TODO: UI
 
-//  val uiServer: UIServer = UIServer.getInstance
-  val statsStore = new FileStatsStorage(new File("./netstats.dump"))
-//  uiServer.attach(statsStore)
-
   //Set up network configuration:
   val conf: MultiLayerConfiguration = new NeuralNetConfiguration.Builder()
     .seed(seed)
@@ -65,6 +62,13 @@ class LSTMGenerator extends Generator {
 
   val net = new MultiLayerNetwork(conf)
   net.init()
+
+
+  val statsStore = new FileStatsStorage(new File(Config.config.getString("bsgenerator.net.statsfile")))
+  if (Config.config.getBoolean("bsgenerator.net.ui")) {
+    val uiServer: UIServer = UIServer.getInstance
+    uiServer.attach(statsStore)
+  }
 
   net.setListeners(new ScoreIterationListener(1))
   net.setListeners(new StatsListener(statsStore))
