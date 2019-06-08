@@ -26,23 +26,20 @@ class LSTMGenerator extends Generator {
   val lstmLayerSize = 200
   val inputLength = 1000 // TODO: tweak
   val tbpttLength = 50
+  val trainingPerc = 0.9
   val batches = 32
-  val numEpochs = 5
+  val numEpochs = 500
   val generateSamplesEveryNMinibatches = 10
-  val seed = 443222
+  val seed = 13132134
   val rng = new Random(seed)
-  var characters: List[Char] = ArticleCharacterLevelIterator.characterSet().toList
-  val charactersLength: Int = characters.size
-
-
-  //TODO: UI
+  val charactersLength: Int = ArticleCharacterLevelIterator.validCharacters.size
 
   //Set up network configuration:
   val conf: MultiLayerConfiguration = new NeuralNetConfiguration.Builder()
     .seed(seed)
     .l2(0.0001)
     .weightInit(WeightInit.XAVIER)
-    .updater(new Adam(0.006))
+    .updater(new Adam(0.004))
     .list
     .layer(new LSTM.Builder()
       .nIn(charactersLength)
@@ -84,11 +81,6 @@ class LSTMGenerator extends Generator {
     new CheckpointListener.Builder(checkpoints).keepLastAndEvery(5, 3).saveEveryEpoch().build()
   )
 
-  val listeners: java.util.List[TrainingListener] = java.util.Arrays.asList(
-    new ScoreIterationListener(1),
-    new StatsListener(statsStore)
-  )
-
   net.setListeners(listeners)
 
   override def train(corpus: Set[Article]): Unit = {
@@ -102,7 +94,7 @@ class LSTMGenerator extends Generator {
 
         if (counter % 10 == 0) {
           print(f"Epoch $i batch $counter, samples:")
-          for (elem <- generateChars(500, 3, iter)) {
+          for (elem <- generateChars(500, 3)) {
             print(elem)
           }
         }
@@ -112,13 +104,13 @@ class LSTMGenerator extends Generator {
     }
   }
 
-  private def generateChars(charsToGen: Int, samples: Int, iter: ArticleCharacterLevelIterator): Array[String] = {
-    val primer = String.valueOf(characters(rng.nextInt(charactersLength)))
+  private def generateChars(charsToGen: Int, samples: Int): Array[String] = {
+    val primer = String.valueOf(ArticleCharacterLevelIterator.randomCharacter(rng))
     val initMatrix = Nd4j.zeros(samples, charactersLength, primer.length)
 
     // One hot encoding
     for ((ch, i) <- primer.zipWithIndex) {
-      val idx = iter.charToIdx(ch)
+      val idx = ArticleCharacterLevelIterator.charToIdx(ch)
       for (sample <- 0 until samples) {
         initMatrix.putScalar(Array[Int](sample, idx, i), 1.0f)
       }
@@ -135,19 +127,16 @@ class LSTMGenerator extends Generator {
       val next = NdArrayAdapter.zeros(samples, charactersLength)
       for (sample <- 0 until samples) {
         val probabilityDistribution: Array[Double] = new Array[Double](charactersLength)
-        for (charIdx <- 0 until charactersLength) probabilityDistribution(charIdx) = NdArrayAdapter.getDouble(out, sample, charIdx);
+        for (charIdx <- 0 until charactersLength) probabilityDistribution(charIdx) = NdArrayAdapter.getDouble(out, sample, charIdx)
         val nextChar = getRandomCharIdFromDistribution(probabilityDistribution)
         next.putScalar(Array[Int](sample, nextChar), 1.0f)
-        stringBuilders(sample).append(iter.idxToChar(nextChar))
+        stringBuilders(sample).append(ArticleCharacterLevelIterator.idxToChar(nextChar))
       }
     }
     stringBuilders.map(_.mkString)
   }
 
-  override def generate(words: Int): String = {
-    val initMatrix = Nd4j.zeros()
-    ""
-  }
+  override def generate(words: Int): String = generateChars(words * 32, 1)(0).split(" ").take(words).mkString(" ")
 
   private def getRandomCharIdFromDistribution(distribution: Array[Double]): Int = {
     for (_ <- 0 to 10) {

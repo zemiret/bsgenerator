@@ -11,13 +11,12 @@ object GeneratorApp extends App {
   val repository: Repository = new PostgresRepository
   val headerCleanup: Regex = "[!'\":.”?,-]".r
   val quote: Set[Char] = "˝˝ˮ»‘„«".toCharArray.toSet
-  val characterSet = ArticleCharacterLevelIterator.characterSet()
 
   private def cleanupContent(content: String): String = {
     content.map {
       case c if quote.contains(c) => '"'
       case '\n' => ' '
-      case c if !characterSet.contains(c) => '}' // TODO xd
+      case c if !ArticleCharacterLevelIterator.validCharacters.contains(c) => '}' // FIXME
       case c => c
     }.replaceAll("\\s\\s+", " ").replace("}", "")
   }
@@ -33,7 +32,6 @@ object GeneratorApp extends App {
   repository.init()
   try {
     val articles = repository.getArticles().filter(isActualArticle).map(cleanupArticle).toSet
-//    print(articles.flatMap(art => art.content.toCharArray).filter(char => !characterSet.contains(char)).toSet)
     generator.train(articles)
   } finally {
     repository.cleanup()

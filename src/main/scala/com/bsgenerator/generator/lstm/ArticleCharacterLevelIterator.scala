@@ -12,7 +12,9 @@ import scala.collection.mutable
 import scala.util.Random
 
 object ArticleCharacterLevelIterator {
-  def characterSet(): Set[Char] = {
+  val validCharacters: Map[Char, Int] = characterSet().toList.zipWithIndex.toMap
+
+  private def characterSet(): Set[Char] = {
     val chars = mutable.Set[Char]()
     // latin
     chars ++= ('a' to 'z')
@@ -26,47 +28,47 @@ object ArticleCharacterLevelIterator {
     chars.toSet
   }
 
+  def idxToChar(idx: Int): Char = validCharacters.find(_._2 == idx).get._1
+
+  def charToIdx(char: Char): Int = validCharacters(char)
+
+  def randomCharacter(rng: Random): Char = idxToChar(rng.nextInt(validCharacters.size))
 }
 
 class ArticleCharacterLevelIterator(batches: Int, batchLength: Int, articles: Seq[Article]) extends DataSetIterator {
-  val validCharacters: List[Char] = ArticleCharacterLevelIterator.characterSet().toList
+
+  import ArticleCharacterLevelIterator._
+
   val data: Seq[Char] = articles.flatMap(a => a.content + ' ')
-  var pointers: Seq[Int] = preparePointers()
-  var cp = 0
+  var pointers: mutable.Queue[Seq[Char]] = preparePointers()
 
-  private def preparePointers(): Seq[Int] = Random.shuffle(List.range(0, data.length - 1, batchLength))
+  private def preparePointers(): mutable.Queue[Seq[Char]] = {
+    val groups = scala.util.Random.shuffle(data.grouped(batchLength).toList.dropRight(1))
+    mutable.Queue(groups: _*)
+  }
 
 
-  override def hasNext: Boolean = cp < pointers.size
+  override def hasNext: Boolean = !pointers.isEmpty
 
 
   override def next(num: Int): DataSet = {
-    val batchSize = Math.min(num, batches)
-    val input = Nd4j.create(Array[Int](batchSize, validCharacters.length, batchLength), 'f')
-    val labels = Nd4j.create(Array[Int](batchSize, validCharacters.length, batchLength), 'f')
+    val batchSize = Math.min(num, pointers.size)
+    val input = Nd4j.create(Array[Int](batchSize, validCharacters.size, batchLength), 'f')
+    val labels = Nd4j.create(Array[Int](batchSize, validCharacters.size, batchLength), 'f')
 
     for (i <- 0 until batchSize) {
-      val start = pointers(cp)
-      val end = start + batchLength
-      var charId = charToIdx(data(start))
-      for (j <- start + 1 until end) {
-
-        val next = charToIdx(data(j))
-        input.putScalar(Array[Int](i, charId, j - 1 - start), 1.0)
-        labels.putScalar(Array[Int](i, next, j - 1 - start), 1.0)
-        charId = next
+      val content = pointers.dequeue()
+      for ((chars, j) <- content.sliding(2).zipWithIndex) {
+        val charId = charToIdx(chars.head)
+        val next = charToIdx(chars(1))
+        input.putScalar(Array[Int](i, charId, j), 1.0)
+        labels.putScalar(Array[Int](i, next, j), 1.0)
       }
     }
-    cp += 1
     new DataSet(input, labels)
   }
 
-  def idxToChar(idx: Int): Char = validCharacters(idx)
-
-  def charToIdx(char: Char): Int = validCharacters.indexOf(char)
-
   override def reset(): Unit = {
-    cp = 0
     pointers = preparePointers()
   }
 
