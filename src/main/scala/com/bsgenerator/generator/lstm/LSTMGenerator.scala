@@ -11,7 +11,7 @@ import org.deeplearning4j.nn.conf.{BackpropType, MultiLayerConfiguration, Neural
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.optimize.api.TrainingListener
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener
+import org.deeplearning4j.optimize.listeners.{CheckpointListener, ScoreIterationListener}
 import org.deeplearning4j.ui.api.UIServer
 import org.deeplearning4j.ui.stats.StatsListener
 import org.deeplearning4j.ui.storage.FileStatsStorage
@@ -72,6 +72,17 @@ class LSTMGenerator extends Generator {
 
   net.setListeners(new ScoreIterationListener(1))
   net.setListeners(new StatsListener(statsStore))
+
+  val checkpoints = new File("./checkpoints")
+  if (!checkpoints.exists()) {
+    checkpoints.mkdirs()
+  }
+
+  val listeners: java.util.List[TrainingListener] = java.util.Arrays.asList(
+    new ScoreIterationListener(1),
+    new StatsListener(statsStore),
+    new CheckpointListener.Builder(checkpoints).keepLastAndEvery(5, 3).saveEveryEpoch().build()
+  )
 
   val listeners: java.util.List[TrainingListener] = java.util.Arrays.asList(
     new ScoreIterationListener(1),
