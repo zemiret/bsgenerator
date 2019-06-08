@@ -15,6 +15,7 @@ import org.deeplearning4j.optimize.listeners.{CheckpointListener, ScoreIteration
 import org.deeplearning4j.ui.api.UIServer
 import org.deeplearning4j.ui.stats.StatsListener
 import org.deeplearning4j.ui.storage.FileStatsStorage
+import org.nd4j.evaluation.classification.Evaluation
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.learning.config.Adam
@@ -23,10 +24,10 @@ import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 import scala.util.Random
 
 class LSTMGenerator extends Generator {
-  val lstmLayerSize = 200
+  val lstmLayerSize = 100
   val inputLength = 1000 // TODO: tweak
   val tbpttLength = 50
-  val trainingPerc = 0.9
+  val trainingPerc = 0.99
   val batches = 32
   val numEpochs = 500
   val generateSamplesEveryNMinibatches = 10
@@ -83,12 +84,20 @@ class LSTMGenerator extends Generator {
 
   net.setListeners(listeners)
 
+  private def splitCorpus(corpus: Set[Article]): (Set[Article], Set[Article]) = {
+    val shuffled = scala.util.Random.shuffle(corpus)
+    return (shuffled.take((corpus.size * trainingPerc).toInt), shuffled.takeRight((corpus.size * (1 - trainingPerc)).toInt))
+  }
+
   override def train(corpus: Set[Article]): Unit = {
-    val iter = new ArticleCharacterLevelIterator(batches, inputLength, corpus.toSeq)
+    val split = splitCorpus(corpus)
+    val trainingData = new ArticleCharacterLevelIterator(batches, inputLength, split._1.toSeq)
+    val evaluationData = new ArticleCharacterLevelIterator(batches, inputLength, split._2.toSeq)
+
     for (i <- 0 to numEpochs) {
       var counter = 0
-      while (iter.hasNext) {
-        val ds = iter.next()
+      while (trainingData.hasNext) {
+        val ds = trainingData.next()
         net.fit(ds)
         counter += 1
 
@@ -100,7 +109,13 @@ class LSTMGenerator extends Generator {
         }
       }
 
-      iter.reset()
+      //evaluate every epoch
+      var eval: Evaluation = net.evaluate(evaluationData)
+      print(eval.stats())
+
+      net.incrementEpochCount()
+      trainingData.reset()
+      evaluationData.reset()
     }
   }
 
