@@ -7,7 +7,7 @@ import com.bsgenerator.repository.{PostgresRepository, Repository}
 import scala.util.matching.Regex
 
 object GeneratorApp extends App {
-  val generator: Generator = new LSTMGenerator
+  val generator: Generator = new MarkovBasedHeaderGenerator
   val repository: Repository = new PostgresRepository
   val headerCleanup: Regex = "[!'\":.”?,-]".r
   val quote: Set[Char] = "˝˝ˮ»‘„«".toCharArray.toSet
@@ -33,6 +33,10 @@ object GeneratorApp extends App {
   try {
     val articles = repository.getArticles().filter(isActualArticle).map(cleanupArticle).toSet
     generator.train(articles)
+
+    for (_ <- 1 to 100) {
+      println(generator.generate(6))
+    }
   } finally {
     repository.cleanup()
   }
